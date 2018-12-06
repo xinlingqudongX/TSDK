@@ -356,6 +356,32 @@
                     "variableMap":""
                 }
             }
+        },
+        "淘宝APP":{
+            "config":{
+                "appkey":"12547748",
+                "domain":"https://h5api.m.taobao.com",
+                "secret":"",
+                "header":{
+                    "m-pv":"2.0",
+                    "m-ttid":""
+                }
+            },
+            "获取时间戳":{
+                "api":"mtop.common.gettimestamp",
+                "v":"1.0",
+                "data":[
+                    {
+                        "name":"id",
+                        "value":"0",
+                        "required":true
+                    },
+                    {
+                        "name":"ts",
+                        "value":"a"
+                    }
+                ]
+            }
         }
     }
 }

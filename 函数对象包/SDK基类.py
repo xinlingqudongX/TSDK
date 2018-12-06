@@ -12,6 +12,9 @@ import os
 from time import time
 from random import choice
 import json
+import functools
+import datetime
+from requests.exceptions import ProxyError
 
 
 class Base(object):
@@ -54,7 +57,18 @@ class Base(object):
                 raise AttributeError
         else:
             raise AttributeError
-        
+    
+    def __get_proxy(self,url):
+        res = self.mtop.get(url,timeout=10)
+        ip_json = json.loads(res.text)
+        if ip_json['success'] == 'true' or ip_json['success']:
+            print(ip_json)
+            data = list(map(lambda item:f'http://{item["IP"]}',ip_json['data'])).pop()
+            return {'http':data,'https':data}
+        else:
+            print(res.text)
+            print('获取代理ip出错')
+            return 
     
     @classmethod
     def regist(cls,mtop:'主要调用对象的实例'=object,options:'配置对象'={})->'返回当前类的实例，相当于是生成':
@@ -132,6 +146,35 @@ class Base(object):
         '''猜想中的淘宝app加密方法，不过data应该也是要排序什么的吧，不过暂时是不清楚了，逆向不出来'''
         return HMAC(f'{secret}'.encode('utf-8'),json.dumps(data,separators=(',',':')).encode('utf-8'))
 
+    @staticmethod
+    def retry(function,token_name:str='taobaoToken'):
+        '''token重新获取装饰器，且token名可能更换,function是被装饰的函数'''
+
+        # print(token_name,function)
+        @functools.wraps(function)
+        def decorator(self,*args,**kw):
+            '''self现在变成了显式的传递'''
+            # print(args,kw)
+            url = 'http://ip.11jsq.com/index.php/api/entry?method=proxyServer.generate_api_url&packid=0&fa=0&fetch_key=&qty=1&time=100&pro=&city=&port=1&format=json&ss=5&css=&ipport=1&dt=1&specialTxt=3&specialJson='
+            if not hasattr(self,'_proxy'):
+                self._proxy = {'time':datetime.datetime.now(),'proxy':self.__get_proxy(url)}
+            try:
+                res = function(self,*args,**kw)
+            except ProxyError as e:
+                print(e,'代理无效')
+                self._proxy.update({'time':datetime.datetime.now(),'proxy':self.__get_proxy(url)})
+                print('代理IP切换')
+                res = function(self,*args,**kw)
+            if 'FAIL_SYS_TOKEN_EMPTY' in res:
+                self.app_config['taobaoToken'] = self.getToken()
+                return function(self,*args,**kw)
+            elif 'FAIL_SYS_USER_VALIDATE' in res or (datetime.datetime.now().minute - self._proxy['time'].minute):
+                #代理IP检查，如果返回的数据不是正常的，或者是代理IP的使用时间到了1分钟，则切换代理IP
+                self._proxy.update({'time':datetime.datetime.now(),'proxy':self.get_proxy(url)})
+                print('代理IP切换')
+                return function(self,*args,**kw)
+            return res
+        return decorator
     
 
 
