@@ -359,12 +359,26 @@
         },
         "淘宝APP":{
             "config":{
-                "appkey":"12547748",
-                "domain":"https://h5api.m.taobao.com",
+                "appkey":"21646297",
+                "domain":"https://acs.m.taobao.com",
                 "secret":"",
                 "header":{
-                    "m-pv":"2.0",
-                    "m-ttid":""
+                    "x-t":"2.0",
+                    "x-pv":"5.2",
+                    "x-features":"27",
+                    "x-app-conf-v":"18",
+                    "x-utdid":"W4d7R8qEOy0DAFAPLFNrh2h1",
+                    "x-umt":"p%2FVLjLxLOrk3EzVnXdg%2FvHotcSeGKUuv",
+                    "x-region-channel":"CN",
+                    "x-nettype":"WIFI",
+                    "x-nq":"WIFI",
+                    "x-mini-wua":"HHnB_%2Ft1bd12bD7tIlViu2lTcL%2BA6RdWABkMNAbR8OiaXpV80MQcrzT%2B6sKaoN8lOuckBkTmZuNmMbg9exw8z%2FNBz%2FAi35%2Bn7JdEbJl62cAU4TiJ0o7BbAyaGe3cNzJpsKX7I",
+                    "x-c-traceid":"null1544148551005000112289",
+                    "x-page-url":"http%3A%2F%2Fm.taobao.com%2Findex.htm",
+                    "x-page-name":"com.taobao.tao.homepage.MainActivity3",
+                    "x-sign":"ab203800905a002d1326da7ce566458774d7e8d339bef46c9e",
+                    "Host":"acs.m.taobao.com",
+                    "user-agent":"MTOPSDK%2F3.0.5.4+%28Android%3B4.4.2%3BXiaomi+%3BMI+6+%29"
                 }
             },
             "获取时间戳":{
