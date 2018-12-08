@@ -1,7 +1,10 @@
 # coding:utf-8
 
-from SDK基类 import Base
-import requests
+try:
+    from . SDK基类 import Base
+except ModuleNotFoundError:
+    from SDK基类 import Base
+from requests import Session
 from collections import OrderedDict
 import time
 import json
@@ -11,6 +14,7 @@ class 淘宝开放平台(Base):
     
     def __init__(self,name:'该函数的名称',user_config:'用户配置信息'={},env:"开放平台环境配置"={},req_config:'函数配置信息'={},**kw):
         '''接受两个配置，一个是用户配置信息，另一个是函数的参数配置信息'''
+        super(淘宝开放平台,self).__init__()
         #用户参数配置
         self.user_config = user_config
         #环境参数配置
@@ -89,11 +93,8 @@ class 淘宝开放平台(Base):
             sign = self.open_Hmacsign(self.user_config.get('appsecret'),dt)
         dt['sign'] = sign
         options['params'] = dt
-        if hasattr(self,'mtop'):
-            req = self.mtop.request(**options)
-        else:
-            req = requests.request(**options)
-        return req.text
+        res = self.request(**options) if hasattr(self,'request') else self.mtop.request(**options)
+        return res.text
 
     
     def __call__(self,options={},**kw):

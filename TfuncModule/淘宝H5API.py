@@ -1,6 +1,9 @@
 # coding:utf-8
 
-from SDK基类 import Base
+try:
+    from . SDK基类 import Base
+except ModuleNotFoundError:
+    from SDK基类 import Base
 from requests import Session
 from time import time
 import json
@@ -15,9 +18,10 @@ class 淘宝H5(Base):
         config是对象的参数公共配置
         req_config是参数请求公共配置
         '''
+        super(淘宝H5,self).__init__()
         self.config = config
         self.req_config = req_config
-        self.mtop = self.mtop if hasattr(self,'mtop') else Session()
+        self.mtop = Session()
         self.__first()
     
     
@@ -31,7 +35,7 @@ class 淘宝H5(Base):
     
     def __first(self,url:str="https://h5api.m.taobao.com/h5/mtop.taobao.wireless.home.load/1.0/?appKey=12574478"):
         '''必须首先请求一个api来获取到h5token'''
-        self.mtop.get(url)
+        self.request('get',url) if hasattr(self,'request') else self.mtop.get(url)
 
     
     def params_check(self,params:dict):
@@ -64,7 +68,7 @@ class 淘宝H5(Base):
         req_options.update({'data':options})
 
         t = int(time() * 1000)
-        token = self.getCookie() or self.mtop.cookies.get('_m_h5_tk')[:32]
+        token = self.getCookie() or (self.cookies.get('_m_h5_tk')[:32] if hasattr(self,'request') else self.mtop.cookies.get('_m_h5_tk')[:32]) 
         appkey = self.req_config.get('appkey','12547748')
         data = json.dumps(req_options.get('data',{}),separators=(",",":"))
 
@@ -80,7 +84,7 @@ class 淘宝H5(Base):
         else:
             dt['data'] = req_options
 
-        res = self.mtop.request(**dt)
+        res = self.request(**dt) if hasattr(self,'request') else self.mtop.request(**dt)
         return res.text
     
     def __call__(self,options:dict={},**kw):

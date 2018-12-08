@@ -1,6 +1,9 @@
 # coding:utf-8
 
-from SDK基类 import Base
+try:
+    from . SDK基类 import Base
+except ModuleNotFoundError:
+    from SDK基类 import Base
 from collections import OrderedDict
 from requests import Session
 
@@ -11,8 +14,9 @@ class 淘宝通用(Base):
     '''
     def __init__(self,name:str,options:dict):
         '''接受配置参数作为内置参数'''
+        super(淘宝通用,self).__init__()
         self.name = name
-        self.mtop = self.mtop if hasattr(self,'mtop') else Session()
+        self.mtop = Session()
         self.options = options
     
     def params_check(self,params:dict={}):
@@ -44,7 +48,7 @@ class 淘宝通用(Base):
         else:
             options['data'] = params
 
-        res = self.mtop.request(**options)
+        res = self.request(**options) if hasattr(self,'request') else self.mtop.request(**options)
         return res.text
     
     def __call__(self,options:'新的配置信息'={},**kw):

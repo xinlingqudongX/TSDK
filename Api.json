@@ -28,31 +28,29 @@
                 "protocol":"http",
                 "sandbox":"正式环境"
             },
-            "func":{
-                "淘宝客店铺查询":{
-                    "name":"taobao.tbk.shop.get",
-                    "userAuth":false,
-                    "requestParams":[
-                        {
-                            "name":"fields",                            
-                            "value":"num_iid,title,pict_url,small_images,reserve_price,zk_final_price,user_type,provcity,item_url,seller_id,volume,nick",
-                            "description":"需返回的字段列表",
-                            "required":true
-                        },
-                        {
-                            "name":"q",
-                            "value":"女装",
-                            "description":"查询词",
-                            "required":true
-                        }
-                    ]
-                }
-
+            "淘宝客店铺查询":{
+                "name":"taobao.tbk.shop.get",
+                "userAuth":false,
+                "requestParams":[
+                    {
+                        "name":"fields",                            
+                        "value":"num_iid,title,pict_url,small_images,reserve_price,zk_final_price,user_type,provcity,item_url,seller_id,volume,nick",
+                        "description":"需返回的字段列表",
+                        "required":true
+                    },
+                    {
+                        "name":"q",
+                        "value":"女装",
+                        "description":"查询词",
+                        "required":true
+                    }
+                ]
             }
+
             
             
         },
-        "通常性API":{
+        "淘宝通用":{
             "获取登录二维码":{
                 "url":"https://qrlogin.taobao.com/qrcodelogin/generateQRCode4Login.do",
                 "method":"get",

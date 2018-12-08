@@ -24,7 +24,7 @@ class Base(object):
             生成URL对象
             生成requests参数对象
     '''
-
+    __public__ = []
 
     def __init__(self):
         # self.req_config = OrderedDict({
@@ -45,11 +45,8 @@ class Base(object):
         有没有mtop属性，有的时候返回taobao对象的方法
         改用公共对象的方法访问，用于以后扩展需要
         '''
-
-        if self.__getattribute__(name):
-            return self[name]
-        elif hasattr(self,'__public__'):
-            #判断公共对象是否有这个属性，没有则报错
+        #判断公共对象是否有这个属性，没有则报错
+        if self.__public__:
             obj = list(filter(lambda obj:hasattr(obj,name),self.__public__))
             if obj:
                 return obj[0][name]
@@ -71,9 +68,13 @@ class Base(object):
             return 
     
     @classmethod
-    def regist(cls,mtop:'主要调用对象的实例'=object,options:'配置对象'={})->'返回当前类的实例，相当于是生成':
+    def regist(cls,mtop:'主要调用对象的实例'=object,*args,**kw):
         '''返回当前类的实例，然后把传递进来的参数存放在公共存储位置，用于请求的访问'''
-        pass
+        cls.mtop = mtop
+        cls.__public__.append(mtop)
+        return cls(*args,**kw)
+    
+
 
     @property
     def url(self):

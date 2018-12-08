@@ -1,4 +1,7 @@
-from SDK基类 import Base
+try:
+    from . SDK基类 import Base
+except ModuleNotFoundError:
+    from SDK基类 import Base
 from requests import Session
 
 class 淘宝APP(object):
@@ -6,7 +9,7 @@ class 淘宝APP(object):
     def __init__(self,name:str,config:dict,req_config:dict):
         self.config = config
         self.req_config = req_config
-        self.mtop = self.mtop if hasattr(self,'mtop') else Session()
+        self.mtop = Session()
     
     def params_check(self,params:dict):
         '''参数检查
@@ -28,6 +31,7 @@ class 淘宝APP(object):
     
     def getres(self,params:dict):
         pass
+        res = self.request(**options) if hasattr(self,'request') else self.mtop.request(**options)
     
     def __call__(self,**kw):
         pass
