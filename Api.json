@@ -113,6 +113,26 @@
                 "loginURL":"https://login.taobao.com/member/login.jhtml",
                 "redirectURL":"https://www.taobao.com/"
             },
+            "创建天猫订单":{
+                "method":"post",
+                "api":"mtop.trade.buildorder.h5",
+                "v":"3.0",
+                "jsv":"2.4.7",
+                "appkey":"12547748",
+                "type":"originaljson",
+                "AntiFlood":true,
+                "LoginRequest":true,
+                "H5Request":true,
+                "ttid":"%23b%23ad%23%23_h5",
+                "x-itemid":"",
+                "x-uid":"",
+                "data":{
+                    "itemId":true,
+                    "quantity":1,
+                    "buyNow":true,
+                    "buyFrom":"tmall_h5_detail"
+                }
+            },
             "宝贝详情":{
                 "api":"mtop.taobao.detail.getdetail",
                 "v":"6.0",

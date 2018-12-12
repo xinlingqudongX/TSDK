@@ -3,6 +3,7 @@ try:
 except ModuleNotFoundError:
     from SDK基类 import Base
 from requests import Session
+from collections import OrderedDict
 
 class 淘宝APP(object):
 
@@ -10,6 +11,45 @@ class 淘宝APP(object):
         self.config = config
         self.req_config = req_config
         self.mtop = Session()
+    
+    def __tb_appInfo(self):
+        state_info = {
+            'KEY_ACCESS_TOKEN':'accessToken',
+            'KEY_API':'api',
+            'KEY_APPKEY':'appKey',
+            'KEY_APP_BACKGROUND':'AppBackground',
+            'KEY_CURRENT_PAGE_NAME':'PageUrl',
+            'KEY_CURRENT_PAGE_NAME':'PageName',
+            'KEY_DATA':'data',
+            'KEY_DEVICEID':'deviceId',
+            'KEY_EXTDATA':'extdata',
+            'KEY_LAT':'lat',
+            'KEY_LNG':'lng',
+            'KEY_MTEE_UA':'ua',
+            'KEY_NETTYPE':'netType',
+            'KEY_NQ':'nq',
+            'KEY_PV':'pv',
+            'KEY_REQBIZ_EXT':'reqbiz-ext',
+            'KEY_SG_ERROR_CODE':'SG_ERROR_CODE',
+            'KEY_SID':'sid',
+            'KEY_SIGN':'sign',
+            'KEY_TIME':'t',
+            'KEY_TIME_OFFSET':'t_offset',
+            'KEY_TTID':'ttid',
+            'KEY_TYPE':'type',
+            'KEY_UA':'ua',
+            'KEY_UID':'uid',
+            'KEY_UMID_TOKEN':'umt',
+            'KEY_UTDID':'utdid',
+            'KEY_VERSION':'v',
+            'KEY_WUA':'wua',
+            'VALUE_TIME_OFFSET':'0',
+            'VALUE_PRODUCT_PV':'1.0',
+            'VALUE_OPEN_PV':'1.0',
+            'VALUE_INNER_PV':'5.1',
+            'KEY_X_FEATURES':'x-features',
+
+        }
     
     def params_check(self,params:dict):
         '''参数检查
@@ -32,6 +72,24 @@ class 淘宝APP(object):
     def getres(self,params:dict):
         pass
         res = self.request(**options) if hasattr(self,'request') else self.mtop.request(**options)
+    
+    def appsign(self):
+        dt = OrderedDict()
+        dt.update({
+            'utdid':'W4d7R8qEOy0DAFAPLFNrh2h1',
+            'uid':'',
+            'reqbiz-ext':'',
+            'data':'',
+            't':'',
+            'api':'',
+            'v':'',
+            'sid':'',
+            'ttid':'10035437%40etao_android_8.8.6',
+            'deviceld':'AnQezS1fsBjqX0zUCeXSMm5HlPCH5TJRP7Xl6-fG1p5K',
+            'lat':'',
+            'lng':'',
+            'x-features':''
+        })
     
     def __call__(self,**kw):
         pass

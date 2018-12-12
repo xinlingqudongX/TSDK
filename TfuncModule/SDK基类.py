@@ -34,6 +34,7 @@ class Base(object):
         # })
         self.console()
     
+
     def __getitem__(self,name):
         return getattr(self,name)
     
@@ -176,7 +177,6 @@ class Base(object):
                 return function(self,*args,**kw)
             return res
         return decorator
-    
 
 
 
