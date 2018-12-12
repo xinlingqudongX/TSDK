@@ -1,0 +1,11 @@
+Metadata-Version: 1.0
+Name: eggtest
+Version: 0.1
+Summary: 淘宝爬虫SDK
+Home-page: http://www.baodu.com
+Author: xinlingqudongX
+Author-email: aa@163.com
+License: GPL
+Description: 淘宝爬虫SDK
+Keywords: test,egg
+Platform: Independant
