@@ -123,15 +123,31 @@
                 "AntiFlood":"true",
                 "LoginRequest":"true",
                 "H5Request":"true",
-                "ttid":"%23b%23ad%23%23_h5",
+                "ttid":"#b#ad##_h5",
                 "x-itemid":"",
                 "x-uid":"",
-                "data":{
-                    "itemId":true,
-                    "quantity":1,
-                    "buyNow":true,
-                    "buyFrom":"tmall_h5_detail"
-                }
+                "data":[
+                    {
+                        "name":"itemId",
+                        "required":true
+                    },
+                    {
+                        "name":"quantity",
+                        "value":1
+                    },
+                    {
+                        "name":"buyNow",
+                        "value":"true"
+                    },
+                    {
+                        "name":"skuId",
+                        "required":true
+                    },
+                    {
+                        "name":"buyFrom",
+                        "value":"tmall_h5_detail"
+                    }
+                ]
             },
             "获取订单详情1":{
                 "api":"mtop.order.queryagileorderdetail",
