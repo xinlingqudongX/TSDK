@@ -44,6 +44,7 @@ class Taobao(Session,Base):
         for item_name in configObj:
             if globals().get(item_name,None):
                 if item_name == '淘宝开放平台':
+                    
                     user_config = configObj[item_name].pop('user_config',{})
                     env = configObj[item_name].pop('env',{})
                     for func_name in configObj[item_name]:
