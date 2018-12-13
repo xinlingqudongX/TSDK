@@ -201,9 +201,12 @@
                 "type":"json",
                 "ttid":"2017%40taobao_h5_6.6.0",
                 "AntiCreep":"true",
-                "data":{
-                    "itemNumId":true
-                }
+                "data":[
+                    {
+                        "name":"itemNumId",
+                        "required":true
+                    }
+                ]
             },
             "宝贝评论":{
                 "api":"mtop.taobao.social.comment.list",
