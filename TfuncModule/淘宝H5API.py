@@ -35,6 +35,12 @@ class 淘宝H5(Base):
         v = self.req_config.get('v')
         return '/'.join([domain,path,api,v])
     
+    @url.setter
+    def url(self,url_value:'重新赋值的链接地址'):
+        '''不过不能允许重新设置链接地址，因为这个地址是计算来的，重新赋值的话需要更改大量的配置'''
+        pass
+
+    
     def __first(self,url:str="https://h5api.m.taobao.com/h5/mtop.taobao.wireless.home.load/1.0/?appKey=12574478"):
         '''必须首先请求一个api来获取到h5token'''
         self.request('get',url) if hasattr(self,'request') else self.mtop.get(url)
