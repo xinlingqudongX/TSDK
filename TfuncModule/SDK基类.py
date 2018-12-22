@@ -15,6 +15,7 @@ import json
 import functools
 import datetime
 from requests.exceptions import ProxyError
+from threading import Thread,Event
 
 
 class Base(object):
@@ -33,6 +34,7 @@ class Base(object):
         #     'path'
         # })
         self.console()
+        self.stop_event = Event()
     
 
     def __getitem__(self,name):
@@ -145,10 +147,32 @@ class Base(object):
         
     
     def app_sign(self,secret:'加密密钥'='',data:dict={},sign_func=sha1):
-        '''猜想中的淘宝app加密方法，不过data应该也是要排序什么的吧，不过暂时是不清楚了，逆向不出来'''
-        return HMAC(f'{secret}'.encode('utf-8'),json.dumps(data,separators=(',',':')).encode('utf-8'))
+        '''猜想中的淘宝app加密方法，不过data应该也是要排序什么的吧，不过暂时是不清楚了，逆向不出来
+        {v=1.0, deviceId=AiXb03Jh5K0C_vSLWC-u2MasOk_76QEfvIpiCMqJKlAl, appKey=21783927, sid=null, t=1545462522, data={"bizType":"taoPassword.judgePassword","bizParam":"{\"passwordContent\":\"comifengnewsclientgold:\\/\\/call?type=list\"}"}, api=mtop.taobao.aplatform.weakget, utdid=XBNj6B3lKccDAOjKwIsds5d9, x-features=27, uid=null, ttid=10035437@etao_android_8.8.8}
+        现在已找到参数组合顺序
+        '''
 
-    @staticmethod
+        def resovle(key_name):
+            if data.get(key_name) == 'null':
+                return ''
+            elif not isinstance(data.get(key_name,''),str):
+                dumpStr = json.dumps(data.get(key_name),separators=(',',':'))
+                if key_name == 'data':
+                    return md5(dumpStr.encode()).hexdigest()
+                else:
+                    return dumpStr
+            else:
+                return data.get(key_name,'')
+        keyword_ls = ['utdid','uid','reqbiz-ext','appKey','data','t','api','v','sid','ttid','deviceId','lat','lng','x-features']
+        if data.get('extdata'):
+            keyword_ls.insert(-1,'extdata')
+        dt = list(map(resovle,keyword_ls))
+        sign_str = '&'.join(dt)
+
+        return HMAC(f'{secret}'.encode('utf-8'),sign_str.encode('utf-8'))
+
+    # 不能使用静态方法来作为装饰器
+    # @staticmethod 
     def retry(function,token_name:str='taobaoToken'):
         '''token重新获取装饰器，且token名可能更换,function是被装饰的函数'''
 
@@ -177,11 +201,31 @@ class Base(object):
                 return function(self,*args,**kw)
             return res
         return decorator
+    
+
+    # def start_thread(self,func,**kw):
+    #     '''启动一个暗中运行的线程
+    #     接受一个函数，然后传递其他参数决定在什么时候运行，以及运行的次数
+    #     但是现在是无法访问停止状态，线程里面的函数如果没有显示的监听那么将会访问不到停止状态，不能从外部停止
+    #     感觉没个鸟用
+    #     '''
+    #     def run(func,**args){
+    #         times = args.get('times',1)
+    #         interval = args.get('seconds',1)
+    #         while times and self.stop_event.isSet():
+    #             times -= 1
+    #             func(*args.get('args',()))
+    #             self.stop_event.wait(interval)
+    #     }
+    #     thread = Thread(target=run,args=(func,),kwargs=kw)
+    #     return thread      
 
 
 
 if __name__ == '__main__':
     base = Base()
+    res = base.app_sign('aa',data={'v': '1.0', 'deviceId': 'AiXb03Jh5K0C_vSLWC-u2MasOk_76QEfvIpiCMqJKlAl', 'appKey': '21783927', 'sid': 'null', 't': '1545462522', 'data': {}, 'api': 'mtop.taobao.aplatform.weakget', 'utdid': 'XBNj6B3lKccDAOjKwIsds5d9', 'uid': 'null', 'ttid': '10035437@etao_android_8.8.8', 'x-features': 27})
+    print(res)
 
 
     
