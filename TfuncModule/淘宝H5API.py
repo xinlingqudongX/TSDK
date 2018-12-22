@@ -24,7 +24,7 @@ class 淘宝H5(Base):
         self.config = config
         self.req_config = req_config
         self.mtop = Session()
-        self.__first()
+        # self.__first()
     
     
     @property
@@ -52,52 +52,78 @@ class 淘宝H5(Base):
         如果检查参数缺少但是配置参数是真的话，报错提示缺少必要的参数
         如果检查参数缺少但是配置参数假的话，暂时未定义
         如果检查参数缺少但是配置参数有默认的话，添加到参数上
+
+        因为淘宝移动端的API需要配置非默认参数，所以配置重写
         '''
+        # dt_params = OrderedDict()
+        # options = self.req_config.get('data',[])
+        # for item in options:
+        #     if item.get('required',False) and not params.get(item.get('name'),False):
+        #         raise Exception(f'缺少必要的参数：{item.get("name")}')
+        #     elif not item.get('required',False) and params.get(item.get('name'),False):
+        #         pass
+        #     elif not item.get('required',False) and not params.get(item.get('name'),False):
+        #         # params[item.get("name")] = item.get("value")
+        #         dt_params.update({item.get("name"):item.get("value")})
+        #     elif item.get('required',False) and params.get(item.get('name'),False):
+        #         dt_params.update({item.get("name"):params.get(item.get("name"))})
+        #     else:
+        #         pass
+        # # return params
+        # return dt_params
+
         dt_params = OrderedDict()
-        options = self.req_config.get('data',[])
-        for item in options:
-            if item.get('required',False) and not params.get(item.get('name'),False):
-                raise Exception(f'缺少必要的参数：{item.get("name")}')
-            elif not item.get('required',False) and params.get(item.get('name'),False):
-                pass
-            elif not item.get('required',False) and not params.get(item.get('name'),False):
-                # params[item.get("name")] = item.get("value")
-                dt_params.update({item.get("name"):item.get("value")})
-            elif item.get('required',False) and params.get(item.get('name'),False):
-                dt_params.update({item.get("name"):params.get(item.get("name"))})
+        for key_name in self.req_config:
+            if isinstance(self.req_config.get(key_name),bool) and self.req_config.get(key_name) and not params.get(key_name):
+                raise Exception('缺少必要的参数:{}'.format(key_name))
+            
+            elif params.get(key_name):
+                dt_params.update({key_name:params.get(key_name)})
             else:
-                pass
-        # return params
+                dt_params.update({key_name:self.req_config.get(key_name)})
+
+            if isinstance(self.req_config.get(key_name),list) and isinstance(dt_params.get(key_name),list):
+                data = OrderedDict()
+                for item in self.req_config.get(key_name):
+                    if isinstance(item.get('required'),bool) and item.get('required') and not params.get(item.get('name')):
+                        raise Exception('缺少必要的参数:{}'.format(item.get('name')))
+                    elif params.get(item.get('name')):
+                        data.update({item.get('name'):params.get(item.get('name'))})
+                    else:
+                        data.update({item.get('name'):item.get('value')})
+
+                dt_params.update({key_name:data})
         return dt_params
+
     
     def getres(self,options):
         '''获取返回的数据，如果有挂载对象就使用挂载对象，否则使用自己的请求
         之后的返回数据解析也会放在这个函数里面
         '''
         dt = {
-            'method':self.req_config.get('method','get'),
+            'method':options.pop('method','get'),
             'url':self.url,
         }
-        req_options = self.req_config.copy()
-        req_options.update({'data':options})
+        # req_options = self.req_config.copy()
+        # req_options.update({'data':options})
 
         t = int(time() * 1000)
         # token = self.getCookie() or (self.cookies.get('_m_h5_tk')[:32] if hasattr(self,'request') else self.mtop.cookies.get('_m_h5_tk',domain="")[:32]) 
         token = self.getCookie() or (self.cookies.get('_m_h5_tk')[:32] if hasattr(self,'request') else self.mtop.cookies.get('_m_h5_tk')[:32]) 
-        appkey = self.req_config.get('appkey','12574478')
-        data = json.dumps(req_options.get('data',{}),separators=(",",":"))
+        appkey = options.get('appkey','12574478')
+        data = json.dumps(options.get('data',{}),separators=(",",":"))
 
         sign = self.h5_sign(token,t,appkey,data)
-        req_options.update({
+        options.update({
             'sign':sign,
             't':t,
             'data':data
         })
 
         if dt.get('method') is 'get':
-            dt['params'] = req_options
+            dt['params'] = options
         else:
-            dt['data'] = req_options
+            dt['data'] = options
 
         res = self.request(**dt) if hasattr(self,'request') else self.mtop.request(**dt)
         return res.text
@@ -163,8 +189,8 @@ if __name__ == '__main__':
                 "LoginRequest":"true",
                 "H5Request":"true",
                 "ttid":"#b#ad##_h5",
-                "x-itemid":"576140975254",
-                "x-uid":"1090955643",
+                "x-itemid":True,
+                "x-uid":True,
                 "data":[
                     {
                         "name":"itemId",
@@ -181,6 +207,10 @@ if __name__ == '__main__':
                     {
                         "name":"buyFrom",
                         "value":"tmall_h5_detail"
+                    },
+                    {
+                        "name":"skuId",
+                        "required":True
                     }
                 ]
             })
@@ -188,5 +218,5 @@ if __name__ == '__main__':
     tb.mtop.cookies.update(ck)
     # res = tb(bizOrderId='295914147223954356')
     # tb.mtop.proxies = {'http':'http://106.56.244.126:23300','https':'https://106.56.244.126:23300'}
-    res = tb(itemId="576140975254")
+    res = tb(**{'itemId':"576140975254","x-itemid":"576140975254","x-uid":"1090955643",'skuId':'22323232'})
     print(res)

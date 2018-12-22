@@ -124,8 +124,8 @@
                 "LoginRequest":"true",
                 "H5Request":"true",
                 "ttid":"#b#ad##_h5",
-                "x-itemid":"",
-                "x-uid":"",
+                "x-itemid":true,
+                "x-uid":true,
                 "data":[
                     {
                         "name":"itemId",
