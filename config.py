@@ -6,6 +6,8 @@
 
 
 import datetime
+import pathlib
+import os
 
 class FileUpdate(object):
 
@@ -23,5 +25,14 @@ class FileUpdate(object):
 class Config(object):
 
     def __init__(self):
-        pass
+        self.H5_configURL = ''
+        self.Config_manager = {}
     
+    def getConfig(self,name):
+        return self.Config_manager.get(name,'')
+    
+
+
+
+if __name__ == '__main__':
+    pass
