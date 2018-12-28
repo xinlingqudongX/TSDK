@@ -35,6 +35,7 @@ class Base(object):
         # })
         self.console()
         self.stop_event = Event()
+        self.loggerManager = {}
     
 
     def __getitem__(self,name):
@@ -57,6 +58,17 @@ class Base(object):
                 raise AttributeError
         else:
             raise AttributeError
+    
+    def __getattribute__(self,name):
+        '''属性访问监听器
+        如果有添加监听器并且匹配到，将把值传入匹配的回调函数中
+        '''
+        val = object.__getattribute__(self,name)
+        if self.loggerManager.get(name) and isinstance(self.loggerManager.get(name),list):
+            for func in self.loggerManager.get(name):
+                val = func(val)
+        
+        return val
     
     def __get_proxy(self,url):
         res = self.mtop.get(url,timeout=10)
@@ -218,7 +230,15 @@ class Base(object):
     #             self.stop_event.wait(interval)
     #     }
     #     thread = Thread(target=run,args=(func,),kwargs=kw)
-    #     return thread      
+    #     return thread   
+
+
+    def addLogger(self,name:str,callback:'回调函数'=None):
+        '''添加日志监听器
+        name是属性名或者是函数名
+        callback是匹配到名称之后如果有设置回调函数则返回回调函数
+        '''
+        pass   
 
 
 
