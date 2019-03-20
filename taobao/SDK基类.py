@@ -15,17 +15,18 @@ import json
 import functools
 import datetime
 from requests.exceptions import ProxyError
+from requests import Session
 from threading import Thread,Event
+from http.cookies import SimpleCookie
 
 
-class Base(object):
-    '''工具类的基类：
+class Base(Session):
+    '''客户端工具类的基类：
         功能：淘宝h5md5加密
             淘宝hmac加密，暂时未知真实加密步骤
             生成URL对象
             生成requests参数对象
     '''
-    __public__ = []
 
     def __init__(self):
         # self.req_config = OrderedDict({
@@ -33,6 +34,7 @@ class Base(object):
         #     'domain':'',
         #     'path'
         # })
+        super(Base,self).__init__()
         self.console()
         self.stop_event = Event()
         self.loggerManager = {}
@@ -44,31 +46,31 @@ class Base(object):
     def __setitem__(self,name,val):
         setattr(self,name,val)
     
-    def __getattr__(self,name):
-        '''属性访问器，当通过这个来访问的时候，判断
-        有没有mtop属性，有的时候返回taobao对象的方法
-        改用公共对象的方法访问，用于以后扩展需要
-        '''
-        #判断公共对象是否有这个属性，没有则报错
-        if self.__public__:
-            obj = list(filter(lambda obj:hasattr(obj,name),self.__public__))
-            if obj:
-                return obj[0][name]
-            else:
-                raise AttributeError
-        else:
-            raise AttributeError
+    # def __getattr__(self,name):
+    #     '''属性访问器，当通过这个来访问的时候，判断
+    #     有没有mtop属性，有的时候返回taobao对象的方法
+    #     改用公共对象的方法访问，用于以后扩展需要
+    #     '''
+    #     #判断公共对象是否有这个属性，没有则报错
+    #     if self.__public__:
+    #         obj = list(filter(lambda obj:hasattr(obj,name),self.__public__))
+    #         if obj:
+    #             return obj[0][name]
+    #         else:
+    #             raise AttributeError
+    #     else:
+    #         raise AttributeError
     
-    def __getattribute__(self,name):
-        '''属性访问监听器
-        如果有添加监听器并且匹配到，将把值传入匹配的回调函数中
-        '''
-        val = object.__getattribute__(self,name)
-        if self.loggerManager.get(name) and isinstance(self.loggerManager.get(name),list):
-            for func in self.loggerManager.get(name):
-                val = func(val)
+    # def __getattribute__(self,name):
+    #     '''属性访问监听器
+    #     如果有添加监听器并且匹配到，将把值传入匹配的回调函数中
+    #     '''
+    #     val = object.__getattribute__(self,name)
+    #     # if self.loggerManager.get(name) and isinstance(self.loggerManager.get(name),list):
+    #     #     for func in self.loggerManager.get(name):
+    #     #         val = func(val)
         
-        return val
+    #     return val
     
     def __get_proxy(self,url):
         res = self.mtop.get(url,timeout=10)
@@ -91,18 +93,18 @@ class Base(object):
     
 
 
-    @property
-    def url(self):
-        return urljoin(self.req_config['domain'],self.req_config['path'])
+    # @property
+    # def url(self):
+    #     return urljoin(self.req_config['domain'],self.req_config['path'])
 
     
-    def getUmidToken(self)->str:
+    def getUmidToken(self):
         return 'C' + str(int(time() * 1000)) + ''.join(str(choice(range(10))) for _ in range(11)) + str(int(time() * 1000)) + ''.join(str(choice(range(10))) for _ in range(3))
     
     def getCookie(self,name:str="_m_h5_tk",start:int=0,end:int=32):
         '''获取Cookie，默认使用H5的token名称，然后取32位'''
         if hasattr(self,'cookies'):
-            return self.cookies.get(name,'')[start:end]
+            return self.cookies.get(name)[start:end] if self.cookies.get(name,'') else ''
         else:
             return ''
 
@@ -110,6 +112,10 @@ class Base(object):
         '''将从浏览器获取到cookie字符串转成字典'''
         ls = CookieStr.replace(' ','').split(';')
         return OrderedDict(list(map(lambda x:re.split(r'=',x,1),ls)))
+        # 这种方式也可以直接转换
+        # cookie = SimpleCookie()
+        # cookie.load(CookieStr)
+        # return cookie
     
     def console(self,log_options:dict={}):
         '''日志输出设置

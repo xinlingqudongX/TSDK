@@ -3,3 +3,5 @@
 # from mTop import Taobao
 
 # taobao  = Taobao
+
+#name = 'TSDK

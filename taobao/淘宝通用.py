@@ -1,9 +1,9 @@
 # coding:utf-8
 
-try:
-    from . SDK基类 import Base
-except ModuleNotFoundError:
-    from SDK基类 import Base
+from __future__ import absolute_import
+
+
+from .SDK基类 import Base
 from collections import OrderedDict
 from requests import Session
 
@@ -43,13 +43,13 @@ class 淘宝通用(Base):
             'url':self.options.get('url'),
             'method':self.options.get('method','get')
         }
-        if options.get('method') is 'get':
+        if options.get('method') == 'get':
             options['params'] = params
         else:
             options['data'] = params
 
         res = self.request(**options) if hasattr(self,'request') else self.mtop.request(**options)
-        return res.text
+        return res
     
     def __call__(self,options:'新的配置信息'={},**kw):
         '''接受配置参数作为新的内置参数，用一个关键字参数作为更新参数'''

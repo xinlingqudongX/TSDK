@@ -1,1 +1,0 @@
-{"\u83b7\u53d6\u6587\u4ef6\u4e0a\u4f20\u6388\u6743": {"requestParams": [{"name": "param_upload_token_request", "value": "", "description": "\u7cfb\u7edf\u81ea\u52a8\u751f\u6210", "required": false}], "description": "\u83b7\u53d6mtop\u6587\u4ef6\u4e0a\u4f20\u6388\u6743", "name": "taobao.mtop.upload.token.get"}}

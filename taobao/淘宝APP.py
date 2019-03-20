@@ -1,16 +1,22 @@
+# coding:utf-8
+
+from __future__ import absolute_import
+
+
 try:
-    from . SDK基类 import Base
-except ModuleNotFoundError:
+    from .SDK基类 import Base
+except ImportError:
     from SDK基类 import Base
-from requests import Session
 from collections import OrderedDict
 
-class 淘宝APP(object):
+class TB_APP(Base):
 
     def __init__(self,name:str,config:dict,req_config:dict):
+        '''淘宝app类暂时不做更改，因为暂时也是无用'''
         self.config = config
         self.req_config = req_config
         self.mtop = Session()
+        super(TB_APP,self).__init__()
     
     def __tb_appInfo(self):
         state_info = {

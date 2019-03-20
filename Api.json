@@ -12,9 +12,10 @@
     },    
     "SDK":{
         "淘宝开放平台":{
-            "user_config":{
+            "config":{
                 "appkey":"25263570",
-                "appsecret":"36b3bddb45f177575f63511b54c9e655" 
+                "appsecret":"36b3bddb45f177575f63511b54c9e655",
+                "url"
             },
             "env":{
                 "正式环境":{
@@ -85,7 +86,7 @@
                     },
                     {
                         "name":"umid_token",
-                        "value":"",
+                        "value":"此TOKEN是淘宝根据浏览器生成的，打开淘宝找到这个或者是C1552629652668890848370931552629675595955",
                         "required":true
                     }
                 ]
@@ -111,7 +112,8 @@
                 "path":"h5",
                 "appkey":"12574478",
                 "loginURL":"https://login.taobao.com/member/login.jhtml",
-                "redirectURL":"https://www.taobao.com/"
+                "redirectURL":"https://www.taobao.com/",
+                "method":"get"
             },
             "预创建天猫订单":{
                 "method":"post",
@@ -256,6 +258,32 @@
                         "value":"0"
                     }
                 ]
+            },
+            "信誉评级":{
+                "api":"mtop.taobao.alistar.dimensions.getdata",
+                "jsv":"2.4.2",
+                "v":"1.0",
+                "type":"json",
+                "appKey":"12574478",
+                "dataType":"jsonp",
+                "data":[
+                    {
+                        "name":"ids",
+                        "value":"{\"dimensions\":[3,0,1,2]}"
+                    },
+                    {
+                        "name":"form",
+                        "value":""
+                    }
+                ]
+            },
+            "用户昵称":{
+                "api":"mtop.user.getusersimple",
+                "jsv":"2.5.0",
+                "v":"1.0",
+                "appKey":"12574478",
+                "dataType":"jsonp",
+                "type":"json"
             }
         },
         "淘宝APP":{

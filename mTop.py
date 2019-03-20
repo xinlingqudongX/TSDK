@@ -1,76 +1,74 @@
 # coding:utf-8
 
+import sys
+sys.path.append('.')
 
-from TfuncModule.淘宝APPapi import 淘宝APP
-from TfuncModule.淘宝H5API import 淘宝H5
-from TfuncModule.淘宝开放平台API import 淘宝开放平台
-from TfuncModule.淘宝通用API import 淘宝通用
-from TfuncModule.SDK基类 import Base
-from requests import Session
-from collections import OrderedDict
-from pathlib import Path
+from taobao.淘宝H5 import TB_H5
+from taobao.淘宝开放平台 import TB_openPlatform
+from taobao.SDK基类 import Base
+
 import json
+from threading import Thread
+from time import sleep
 
 
-
-class Taobao(Session,Base):
-    '''
-    作用：从函数对象包中导出所有的函数对象，然后挂载到当前对象上面，
-    再添加一个共同对象的路由
-    '''
+class Client(Base):
 
     def __init__(self):
-        super(Taobao,self).__init__()
-        Base.__init__(self)
-        self.api_config = self.__getConfig()
-        self.__LoadObj(self.api_config.get('SDK',{}))
+        super(Client,self).__init__()
+        self.H5 = TB_H5()
+        self.open = TB_openPlatform()
     
-    def __getitem__(self,name):
-        return getattr(self,name)
+
+    def login(self,timeout:int=30,domain:str='www.taobao.com'):
+        self.defaulturl = domain
+        self.get(f'https://login.taobao.com/member/login.jhtml?redirectURL={domain}')
+        umid_token = self.getUmidToken()
+        res = self.get(f'https://qrlogin.taobao.com/qrcodelogin/generateQRCode4Login.do?adUrl=&adImage=&adText=&viewFd4PC=&viewFd4Mobile=&from=tb&appkey=00000000&umid_token={umid_token}')
+        data = json.loads(res.text)
+        thd = self.checkState(data['lgToken'],umid_token,timeout)
+        return res
     
-    def __setitem__(self,name,val):
-        setattr(self,name,val)
-    
-    def __getConfig(self,path:str='./Api.json'):
-        if Path(path).exists():
-            with open(path,encoding='utf-8') as f:
-                dt = json.load(f)
-            return dt
-        else:
-            return {}
-    
-    def __LoadObj(self,configObj,base:object=Base):
-        base.__public__.append(self)
-        for item_name in configObj:
-            if globals().get(item_name,None):
-                if item_name == '淘宝开放平台':
-                    
-                    user_config = configObj[item_name].pop('user_config',{})
-                    env = configObj[item_name].pop('env',{})
-                    for func_name in configObj[item_name]:
-                        #淘宝开放平台API注册
-                        self[func_name] = globals()[item_name](name=func_name,user_config=user_config,env=env,req_config=configObj[item_name][func_name])
-                elif item_name == '淘宝通用':
-                    for func_name in configObj[item_name]:
-                        #淘宝通用API注册
-                        self[func_name] = globals()[item_name](name=func_name,options=configObj[item_name][func_name])
-                elif item_name == '淘宝H5':
-                    config = configObj[item_name].pop('config',{})
-                    for func_name in configObj[item_name]:
-                        #淘宝H5API注册
-                        self[func_name] = globals()[item_name](name=func_name,config=config,req_config=configObj[item_name][func_name])
-                elif item_name == '淘宝APP':
-                    config = configObj[item_name].pop('config',{})
-                    for func_name in configObj[item_name]:
-                        #淘宝APPAPI注册
-                        self[func_name] = globals()[item_name](name=func_name,config=config,req_config=configObj[item_name][func_name])
-                else:
+    def checkState(self,lgToken,umid_token,*args):
+        '''闭包中访问不到函数的局域变量，也是不知道怎么回事'''
+        def run():
+            # print(args)
+            timeout = args[0]
+            locals()['lgToken'] = lgToken
+            locals()['umid_token'] = umid_token
+            locals()['timeout'] = timeout
+            # print(lgToken)
+            while timeout > 0:
+                res = self.get(f'https://qrlogin.taobao.com/qrcodelogin/qrcodeLoginCheck.do?lgToken={lgToken}&defaulturl={self.defaulturl}')
+                data = json.loads(res.text)
+                if data['code'] == '10006':
+                    url = data['url'] + '&umid_token=' + umid_token
+                    self.get(url)
+                    print('扫码成功')
+                    break
+                elif data['code'] == '10001':
+                    print('正在扫码')
+                    sleep(1)
+                    continue
+                elif data['code'] == '10004':
+                    timeout = 0
+                    break
+                elif data['code'] == '10000':
+                    # print(data['message'])
                     pass
-    
+                timeout -= 1
+                sleep(1)
+        
+        thd = Thread(target=run)
+        thd.start()
+        return thd
+
+
 
 
 
 if __name__ == '__main__':
     
-    mtop = Taobao()
-    mtop.我的足迹()
+    top = Client()
+    res = top.login(30)
+    print(res.text)
