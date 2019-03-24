@@ -30,16 +30,19 @@ class TB_H5(Base):
     
     def execute(self,datas:dict):
 
-        data = datas.pop('data')
+        data = datas.pop('data',{})
         data_str = json.dumps(data,separators=(',',':'))
         t = str(int(time() * 1000))
         appkey = self.config.get('appkey')
         sign = self.h5_sign(self.getCookie(),t,appkey,data_str)
         datas.update({'sign':sign,'data':data_str,'t':t,'appkey':appkey})
 
-        options = OrderedDict();
+        options = OrderedDict()
         options['method'] = datas.get('method','get')
-        url = '/'.join([self.config.get('domain'),self.config.get('path'),datas.get('api'),datas.get('v')])
+        if self.config.get('path').find('/rest/') > -1:
+            url = '/'.join([self.config.get('domain'),self.config.get('path')])
+        else:
+            url = '/'.join([self.config.get('domain'),self.config.get('path'),datas.get('api').lower(),datas.get('v')])
         options['url'] = url
         if options['method'] == 'get':
             options['params'] = datas
