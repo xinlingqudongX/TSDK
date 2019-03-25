@@ -11,6 +11,7 @@ except ImportError:
 from time import time
 import json
 from collections import OrderedDict
+from urllib.parse import urljoin
 
 
 
@@ -26,7 +27,7 @@ class TB_H5(Base):
     }):
         super(TB_H5,self).__init__()
         self.config = config
-        self.__first()
+        self._first()
     
     def execute(self,datas:dict):
 
@@ -52,9 +53,13 @@ class TB_H5(Base):
         return res
     
     
-    def __first(self,url:str="https://h5api.m.taobao.com/h5/mtop.taobao.wireless.home.load/1.0/?appKey=12574478"):
-        '''必须首先请求一个api来获取到h5token'''
-        res = self.get(url)
+    def _first(self,domain:str='https://h5api.m.taobao.com',url:str="/h5/mtop.taobao.wireless.home.load/1.0/?appKey=12574478"):
+        '''
+            必须首先请求一个api来获取到h5token
+            有多个API时，需要先获取多个API下面的token
+            如果是https://h5api.m.tmall.com下的API也是需要先获取token的
+        '''
+        res = self.get(urljoin(domain,url))
         return res
 
 

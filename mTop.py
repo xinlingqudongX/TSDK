@@ -22,16 +22,15 @@ class Client(Base):
         super(Client,self).__init__()
         self.H5 = TB_H5()
         self.open = TB_openPlatform()
-        self.__first()
     
-    def __first(self,domain:str='https://h5api.m.taobao.com',url:str="/h5/mtop.taobao.wireless.home.load/1.0/?appKey=12574478"):
-        '''
-            必须首先请求一个api来获取到h5token
-            有多个API时，需要先获取多个API下面的token
-            如果是https://h5api.m.tmall.com下的API也是需要先获取token的
-        '''
-        res = self.get(urljoin(domain,url))
-        return res
+    # def __first(self,domain:str='https://h5api.m.taobao.com',url:str="/h5/mtop.taobao.wireless.home.load/1.0/?appKey=12574478"):
+    #     '''
+    #         必须首先请求一个api来获取到h5token
+    #         有多个API时，需要先获取多个API下面的token
+    #         如果是https://h5api.m.tmall.com下的API也是需要先获取token的
+    #     '''
+    #     res = self.get(urljoin(domain,url))
+    #     return res
     
     def login(self,umid_token,domain:str='www.taobao.com'):
         self.defaulturl = domain
@@ -96,18 +95,23 @@ if __name__ == '__main__':
     thr = top.checkState(data['lgToken'],umid_token,30)
     thr.start()
     thr.join()
-    # top.H5.config['domain'] = 'https://api.m.taobao.com'
-    res = top.H5.execute({
-        'api':'mtop.taobao.alistar.dimensions.getData',
-        'v':'1.0',
-        'jsv':'2.4.2',
-        'type':'json',
-        'dataType':'jsonp',
-        'data':{
-            'ids':json.dumps({'dimensions':[0,1,2,3]},separators=(',',':'))
-        }
-    })
-    print(res.text)
+
+    # top.H5.headers = {
+    #     'Referer':'https://s.m.taobao.com/h5?event_submit_do_new_search_auction=1&_input_charset=utf-8&topSearch=1&atype=b&searchfrom=1&action=home%3Aredirect_app_action&from=1&sst=1&n=20&buying=buyitnow&q=%E7%94%B7%E8%A3%85',
+    #     'User-Agent':'Dalvik/2.1.0 (Linux; U; Android 7.0; MI 4S MIUI/8.9.13)'
+    # }
+
+    # res = top.H5.execute({
+    #     'api':'mtop.taobao.alistar.dimensions.getData',
+    #     'v':'1.0',
+    #     'jsv':'2.4.2',
+    #     'type':'json',
+    #     'dataType':'jsonp',
+    #     'data':{
+    #         'ids':json.dumps({'dimensions':[0,1,2,3]},separators=(',',':'))
+    #     }
+    # })
+    # print(res.text)
     # top.H5.config['domain'] = 'https://h5api.m.taobao.com'
     # res = top.H5.execute({
     #     'api':'mtop.taobao.geb.shopinfo.queryshopinfo',
