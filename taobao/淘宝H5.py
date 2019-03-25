@@ -12,6 +12,7 @@ from time import time
 import json
 from collections import OrderedDict
 from urllib.parse import urljoin
+import re
 
 
 
@@ -27,7 +28,7 @@ class TB_H5(Base):
     }):
         super(TB_H5,self).__init__()
         self.config = config
-        self._first()
+        self.__first()
     
     def execute(self,datas:dict):
 
@@ -35,7 +36,9 @@ class TB_H5(Base):
         data_str = json.dumps(data,separators=(',',':'))
         t = str(int(time() * 1000))
         appkey = self.config.get('appkey')
-        sign = self.h5_sign(self.getCookie(),t,appkey,data_str)
+        domain = re.findall(r'\.[a-zA-Z0-9]+\.[a-z]+$',self.config['domain'])
+        domain = domain[0] if domain else '.taobao.com'
+        sign = self.h5_sign(self.getCookie(domain=domain),t,appkey,data_str)
         datas.update({'sign':sign,'data':data_str,'t':t,'appkey':appkey})
 
         options = OrderedDict()
@@ -53,7 +56,7 @@ class TB_H5(Base):
         return res
     
     
-    def _first(self,domain:str='https://h5api.m.taobao.com',url:str="/h5/mtop.taobao.wireless.home.load/1.0/?appKey=12574478"):
+    def __first(self,domain:str='https://h5api.m.taobao.com',url:str="/h5/mtop.taobao.wireless.home.load/1.0/?appKey=12574478"):
         '''
             必须首先请求一个api来获取到h5token
             有多个API时，需要先获取多个API下面的token
@@ -84,5 +87,5 @@ if __name__ == '__main__':
         'data':{
             'itemNumId':'585559878166'
         }
-    });
+    })
     print(res.text)

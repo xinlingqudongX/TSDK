@@ -9,6 +9,7 @@
     * 优化开放平台类，繁杂的配置文件，多余的加载，我用了Node的SDK之后发现还不如Node的方便，只需要传入API名称和数据就行了，那么我弄了配置文件又有什么用，没有达到简单可用的目的遂改成Node一样的方式请求数据
     * 优化H5API类，经过我思考后觉得配置文件太过繁杂，且不够灵活也不多变，爬虫本身就是需要多变的，所以移除配置文件，通过传递参数直接构建，更加灵活方便
 
+  - 还有部分功能未实现，例如日志功能和请求重放功能，以及新添加的网站
 
 ```python
   from TSDK.mTop import Client
@@ -17,6 +18,10 @@
   #获取淘宝二维码，可以通过扫码登录淘宝
   res = top.login(timeout=40)
   print(res.text)
+  data = json.loads(res.text)
+  thr = top.checkState(data['lgToken'],umid_token,30)
+  thr.start()
+  
 
   #设置开放平台的appkey和密钥，然后传递API和配置可以直接获取数据
   top.open.config['appkey'] = ''
@@ -50,7 +55,7 @@
 ```python
   from requests.cookies import RequestsCookieJar
 
-  dt = top.cookies.get_dict('.login.taobao.com')
+  dt = top.H5.cookies.get_dict('.login.taobao.com')
 
   jar = RequestsCookieJar()
   for name in dt:

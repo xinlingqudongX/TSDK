@@ -72,41 +72,12 @@ class Base(Session):
         
     #     return val
     
-    def __get_proxy(self,url):
-        res = self.mtop.get(url,timeout=10)
-        ip_json = json.loads(res.text)
-        if ip_json['success'] == 'true' or ip_json['success']:
-            print(ip_json)
-            data = list(map(lambda item:f'http://{item["IP"]}',ip_json['data'])).pop()
-            return {'http':data,'https':data}
-        else:
-            print(res.text)
-            print('获取代理ip出错')
-            return 
-    
-    @classmethod
-    def regist(cls,mtop:'主要调用对象的实例'=object,*args,**kw):
-        '''返回当前类的实例，然后把传递进来的参数存放在公共存储位置，用于请求的访问'''
-        cls.mtop = mtop
-        cls.__public__.append(mtop)
-        return cls(*args,**kw)
-    
-
-
-    # @property
-    # def url(self):
-    #     return urljoin(self.req_config['domain'],self.req_config['path'])
-
-    
     def getUmidToken(self):
         return 'C' + str(int(time() * 1000)) + ''.join(str(choice(range(10))) for _ in range(11)) + str(int(time() * 1000)) + ''.join(str(choice(range(10))) for _ in range(3))
     
-    def getCookie(self,name:str="_m_h5_tk",start:int=0,end:int=32):
+    def getCookie(self,name:str="_m_h5_tk",domain:str='.taobao.com',start:int=0,end:int=32):
         '''获取Cookie，默认使用H5的token名称，然后取32位'''
-        if hasattr(self,'cookies'):
-            return self.cookies.get(name)[start:end] if self.cookies.get(name,'') else ''
-        else:
-            return ''
+        return self.cookies.get(name,domain=domain)[start:end] if self.cookies.get(name,default='',domain=domain) else ''
 
     def cookstr2dict(self,CookieStr:str):
         '''将从浏览器获取到cookie字符串转成字典'''
