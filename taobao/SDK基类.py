@@ -35,9 +35,11 @@ class Base(Session):
         #     'path'
         # })
         super(Base,self).__init__()
-        self.console()
+        # self.console()
         self.stop_event = Event()
         self.loggerManager = {}
+        # self.log = False
+        # self.log_format = ''
     
 
     def __getitem__(self,name):

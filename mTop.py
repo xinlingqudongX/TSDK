@@ -41,7 +41,7 @@ class Client(Base):
         return res
     
     def checkState(self,lgToken,umid_token,timeout):
-        '''闭包中访问不到函数的局域变量，也是不知道怎么回事'''
+        '''在闭包中修改变量要使用nonlocal关键字'''
         def run():
             nonlocal timeout
             # locals()['lgToken'] = lgToken

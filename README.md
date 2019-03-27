@@ -48,6 +48,15 @@
         }
     })
   print(res.text)
+
+  #API请求日志的记录,SDK对象继承自requests的Session类，可以通过添加hook来获取响应
+  #请参考requests高级用法：http://docs.python-requests.org/zh_CN/latest/user/advanced.html
+  def console(res):
+    print(res.url)
+    print(res.text)
+
+  top.H5.hooks['response'] = [console]
+
 ```
 
 ### Cookie的同步
