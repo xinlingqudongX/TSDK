@@ -122,7 +122,7 @@ if __name__ == '__main__':
     
     top = Client()
     umid_token = top.getUmidToken()
-    res = top.login(umid_token,30)
+    res = top.login(umid_token)
     print(res.text)
     # cookie = {
     #     '.login.taobao.com':top.cookies.get_dict('.login.taobao.com'),

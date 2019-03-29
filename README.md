@@ -17,7 +17,7 @@
   top = Client()
   #获取淘宝二维码，可以通过扫码登录淘宝
   umid_token = top.getUmidToken()
-  res = top.login(umid_token,timeout=40)
+  res = top.login(umid_token)
   print(res.text)
   data = json.loads(res.text)
   thr = top.checkState(data['lgToken'],umid_token,30)
