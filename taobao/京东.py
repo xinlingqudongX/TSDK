@@ -22,10 +22,10 @@ class JD(Base):
 
     def __init__(self):
         super(JD,self).__init__()
-        self.head = {
+        self.headers.update({
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36',
             'Referer':'https://passport.jd.com/new/login.aspx?ReturnUrl=https%3A%2F%2Fwww.jd.com%2F'
-        }
+        })
 
     # def g_tk(self,string:str=None,cookieName:str='wq_skey'):
     #     if not string:

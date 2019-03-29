@@ -10,9 +10,10 @@ except ImportError as e:
 
 import json
 from threading import Thread
-from time import sleep
+from time import sleep,strftime,time
 from requests.cookies import RequestsCookieJar
-from urllib.parse import urljoin
+from urllib.parse import urljoin,parse_qsl,urlparse
+from collections import OrderedDict
 
 
 
@@ -49,12 +50,24 @@ class Client(Base):
             # locals()['timeout'] = timeout
             # print(lgToken)
             while timeout > 0:
+                self.H5.headers.update({
+                            'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36',
+                            'Referer':'https://login.taobao.com/member/login_unusual.htm?user_num_id=2979250577&is_ignore=&from=tbTop&style=&popid=&callback=&minipara=&css_style=&is_scure=true&c_is_secure=&tpl_redirect_url=https%3A%2F%2Fwww.taobao.com%2F&cr=https%3A%2F%2Fwww.taobao.com%2F&trust_alipay=&full_redirect=&need_sign=&not_duplite_str=&from_encoding=&sign=&timestamp=&sr=false&guf=&sub=false&wbp=&wfl=null&allp=&loginsite=0&login_type=11&lang=zh_CN&appkey=00000000&param=7nmIF0VTf6m%2Bbx8wuCmPLTEdh1Ftef8%2B5yUA%2FXNtAI%2FfMwadkeaCast40u2Ng0%2FC7Z75sOSVLMugWTqKjJ7aA55JYIL%2FPDFJ7zaJhq9XSVUOX%2B1AxQatuIvw4TXGJm1VG4alZ2UohVAAt5WTLYbs5im077nTG%2BOkovORQNtMCEzWKMe0xcuienFAhsBhC0V7qIYZJvPGOOEt0tORA8Fv1zYPuOkWEPDFsPwYG5xj4LTKNZt5HSRRHkviiPy9AJ9uC%2Bs7V%2FQ7b6K07YUG1fA3tFwALGnorSUXRdhcXUBBAt6IiyStIkWFWDgJEymOAXOS5RNGlO1EL5ppmpQas7BarrW2Krui4bxV81AJXyxLfnk3MOxI2dUNdO9VQNY0F6a6nk%2FCzUfR0NfPRrIoXuZDn2N01A8q5XGrMlWmBCH5%2FSKz6%2F%2BrUx3%2FxQTYWmgV49rVSdtySIHip5PsrXHWXCbHqscdve540l5CUKTT7znsoL45pth%2FosxMUb649Yw1EPAq'
+                        })
                 res = self.H5.get(f'https://qrlogin.taobao.com/qrcodelogin/qrcodeLoginCheck.do?lgToken={lgToken}&defaulturl={self.defaulturl if hasattr(self,"defaulturl") else "www.taobao.com"}')
                 data = json.loads(res.text)
                 if data['code'] == '10006':
+                    print(data)
                     url = data['url'] + '&umid_token=' + umid_token
-                    self.H5.get(url)
+                    res = self.H5.get(url)
                     print('扫码成功')
+                    if res.url.find('login_unusual.htm') > -1:
+                        # URL = urlparse(res.url)
+                        # dt = OrderedDict(parse_qsl(URL.query))
+                        
+                        # res2 = self.H5.get(f'https://aq.taobao.com/durex/validate?param={dt["param"]}&redirecturl=https%3A%2F%2Flogin.taobao.com%2Fmember%2Flogin_mid.htm')
+                        # print(res2.url)
+                        print('需要安全验证登录')
                     break
                 elif data['code'] == '10001':
                     print('正在扫码')
@@ -71,6 +84,35 @@ class Client(Base):
         
         thd = Thread(target=run)
         return thd
+
+    def sendcode(self,param:str='',target=''):
+        domain = 'https://aq.taobao.com/durex/sendcode'
+        data = {
+            'checkType':'phone',
+            'target':'',
+            'safePhoneNum':'',
+            'checkCode':''
+        }
+        res = self.H5.post(domain,params={'param':param})
+        print(res.text)
+    
+    def checkcode(self,param,code,target):
+        domain = 'https://aq.taobao.com/durex/sendcode'
+        data = {
+            'checkType':'phone',
+            'target':'',
+            'safePhoneNum':'',
+            'checkCode':code,
+            'pageLog':{
+                'actions':[
+                    {'result':'true','target':'其他验证方式','targetType':'a','attr':'','userTime':strftime('%Y-%m-%d %H:%M:%S'),'type':'operation'},
+                    {'result':'true','target':'手机短信验证','targetType':'div','attr':'','userTime':strftime('%Y-%m-%d %H:%M:%S'),'type':'operation'},
+                    {'result':'true','target':'确定','targetType':'button','attr':'','userTime':strftime('%Y-%m-%d %H:%M:%S'),'type':'operation'}
+                ]
+            }
+        }
+        res = self.H5.post(domain,params={'param':param},data=data)
+        print(res.text)
 
 
 
