@@ -3,6 +3,7 @@
 
 from types import FunctionType,LambdaType,CodeType
 from functools import wraps
+from threading import Thread
 
 
 
@@ -37,7 +38,6 @@ class Retry(object):
     
     def __call__(self,func,*args,**kw):
 
-        print('call:')
         @wraps(func)
         def wrapper(obj,**kw):
             res = func(obj,**kw)
@@ -56,6 +56,23 @@ class G:
     def execute(self,**kw):
         return kw
 
+
+class BackThread(Thread):
+
+    def __init__(self,func,args:tuple=()):
+        super(BackThread,self).__init__()
+        self.func = func
+        self.args = args
+    
+    def run(self):
+        self.result = self.func(*self.args)
+    
+    def get_result(self):
+        Thread.join(self)
+        try:
+            return self.result
+        except Exception:
+            return None
 
 
 

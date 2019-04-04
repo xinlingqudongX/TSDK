@@ -38,6 +38,9 @@ class Base(Session):
         # self.console()
         self.stop_event = Event()
         self.loggerManager = {}
+        self.headers.update({
+            'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36'
+        })
         # self.log = False
         # self.log_format = ''
     
