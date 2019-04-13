@@ -3,13 +3,13 @@ try:
     from .taobao.淘宝H5 import TB_H5
     from .taobao.淘宝开放平台 import TB_openPlatform
     from .taobao.SDK基类 import Base
-    from .util.tools import BackThread
+    from .util.tools import BackThread,Encry
 except ImportError as e:
     from taobao.淘宝H5 import TB_H5
     from taobao.淘宝开放平台 import TB_openPlatform
     from taobao.SDK基类 import Base
 
-    from util.tools import BackThread
+    from util.tools import BackThread,Encry
 
 import json
 # from threading import Thread
@@ -18,9 +18,6 @@ from requests.cookies import RequestsCookieJar
 from urllib.parse import urljoin,parse_qsl,urlparse,quote
 from collections import OrderedDict
 import re
-from lxml import etree
-import math
-from ctypes import c_uint32,c_int32
 from random import random
 
 class Client(Base):
@@ -29,6 +26,7 @@ class Client(Base):
         super(Client,self).__init__()
         self.H5 = TB_H5()
         self.open = TB_openPlatform()
+        self.encry = Encry()
         self.setcookie()
     
     # def __first(self,domain:str='https://h5api.m.taobao.com',url:str="/h5/mtop.taobao.wireless.home.load/1.0/?appKey=12574478"):
@@ -94,6 +92,7 @@ class Client(Base):
                     res_main = self.H5.get(url)
                     print('扫码成功')
                     if res_main.url.find('login_unusual.htm') > -1:
+                        print('需要安全验证登录')
                         return False
                         # URL = re.findall(r"url:'(.*?)',",res_main.text)[0] if re.findall(r"url:'(.*?)',",res_main.text) else None
                         # if not URL:
@@ -114,7 +113,7 @@ class Client(Base):
                         
                         # res2 = self.H5.get(f'https://aq.taobao.com/durex/validate?param={dt["param"]}&redirecturl=https%3A%2F%2Flogin.taobao.com%2Fmember%2Flogin_mid.htm')
                         # print(res2.url)
-                        print('需要安全验证登录')
+                        
                     return True
                     break
                 elif data['code'] == '10001':
@@ -153,6 +152,7 @@ class Client(Base):
         return res
     
     def checkcode(self,param,code,target):
+        '''淘宝安全登录验证'''
         head = {'origin':'https://aq.taobao.com'}
         domain = 'https://aq.taobao.com/durex/sendcode'
         data = {
@@ -176,17 +176,16 @@ class Client(Base):
             print(res.text)
         return res
 
-    def sendMsg(self,phone,url:str='https://login.m.taobao.com/sendMsg.do',domain:str='https://h5.m.taobao.com'):
+    def sendMsg(self,phone,url:str='https://login.m.taobao.com/sendMsg.do'):
+        self.H5.get('https://login.m.taobao.com/msg_login.htm?spm=0.0.0.0&ttid=h5%40iframe&redirectURL=https%3A%2F%2Fh5.m.taobao.com%2Fother%2Floginend.html%3Forigin%3Dhttps%253A%252F%252Fmain.m.taobao.com')
         um_token = self.um_token if hasattr(self,'um_token') else self.get_umtoken()
-        if um_token:
-            self.um_token = um_token
         form = {
             'TPL_username':phone,
             'ncoSig':'',
             'ncoSessionid':'',
             'ncoToken':'',
             'um_token':um_token,
-            'ua':'115#1XACqf1O1TZSLM6AtfGU1CsoE5sZIpA11g2u11XZKC11q8V4OODHhSThyzrO8jmUbA38uRKQi/rKyf/PAihcaLpXyrPQAS5yetT4ykNpi/buxEONAWNcaT6burPQvIAbAXlCuWZQ8bWRhUFGAWNcaLIEyrrQOSAPe1L8ykNQOQk5hEz4ioYR/n9jsOC/PtMQSFAFFKjH17QffqcKLpRdI0a+LgqiNyGDJD3ZJU4nL4ya7RsqspO5kK6Ld+eYL32W564xY3sQIo3tD4EGIfZxPeNsYCQoAvHUQDZ3FJgmIMl1L9h4uNsyN1h7M9OxElI99jJ5RLqBSZrZo+2XyCJlP+JmgUIIWC9P6e2MiOzsQKtUasFuk7dAEx3SCFOWQekLbUqN4joU9XsOuORJ+NvOZodes1q87cN7NjhAvZBYkimei6Ef8a6CcWAlcVxY4lrVvL2GBsk/KX5WzSsFczSy8o/OovaGNGQIXWqhEmNWtQEG/UO3BbjYvcoiiTZFD5NWs4jfyYdVLvj9z3dCYokpucjezXGarYssy6yTPIR1LAp0TDZQkD9xvAEYLHdHRhhSfy5cgtPb/Z9ciDQZaOlOxBZfxO2tUmcJSFmIzwA854e0dv9fDuJkO9Ot65ThGbW53+i1qwcJ3kqmLFzl/1IgOZJjdTaZxmeeRvoA6l45slMvpKdEx0dG3qwDRYdPdpMpSCfW0ekrB9YssLumV0miZO5EPZzR'
+            'ua':'115#1UEIUf1O1TNL1lTDtfGe1CsoE51MI9A11g2u1N2ZKC11q8VlGODHhBlfyzFiNIfyMx/8y5cWi/JJhUUzsoOck86fuzEpOSAyet/8s6IpNbn4eUU4AkN2aYBXuW1QGVysFKT4y5oQiQJJhzU4AWND5YpXyrPQASv4eK/8uSPpgQJRhKAbwzmFZL1010F9dPYMTT9cxCNRlGgmOxpbEFkRe8qIfoxy7pl1yFwqawuBxnihuX5JPN5sYlslAvHUQDZegJuNJ3ED+pTSNDNeHR8PwP/4CjnjTGSLpKqJr63y5qX6Qr8L+kMQ/6Q+27fNulWSpMnOl389bwum8I66eZCn5ICKxvk2hhVzRo6Jbj3vN01kYgauHzEStRXEyjMygV8G06FpIWqJ7EwSO9u1npAOv3MXhII5hTcio6YVz92pF6vCMHvxbsL3ISLy/yUnHM9HiQhyc1ffofR6uNd3TQCFAffrknFNmIMjkqTV/b3sBxns9cMWfUsnR9ueur1SEBL5ZdNYl/tnFU33wwmffwGk4bl5DAx3/HpDH88R356aSLJmi8hfb4OvWsMhp2DAmf6O4sZewL6noDmMfCdW3vyLHd2lPAiDUwRHisnPRSsgUIyRDS+F7M8Z4IxmYrmZg269gzRIaUcJkglgoNQ7AvHqP+qpLUsgo6MUE1/8FrIanONOaEG='
         }
         res = self.H5.post(url,form)
         print(res.text)
@@ -212,7 +211,7 @@ class Client(Base):
             'smsToken':'',
             'page':'msgLoginV3',
             'um_token':self.um_token if hasattr(self,'um_token') else self.get_umtoken(),
-            # 'ua':''
+            'ua':'115#1bF1c11O1TZ9MHu5tfGe1CsoE51MI9A11g2u1N2ZKC11q8VlGODHXfOYPaFGsbtzDLoa0/Xn8SNPe/a8yWdi9n4VnJrVt9m5w8pXyrrQ9yffe3VGyWTzG/rkh4zNAWIDZTnwyzy7ASVyeKQ4uWNQi/W5hX/1x11yaTBfy5fpOSAyFKThTyipiQJJv4U4OkN2aTBfurPIASAPetT8u7SQi/WRKB1COWND/BNDHDKpvd1OL+MQSFAFFKjH17QffqcK8w4z0jzTU6N6JM4+4puJ2M+Ph4lZPOuTMTKkxfT8qIYQdi1PDPZaH0EarDs8wF+6RCixRgqIpvyZAkR4LV7p2yEzWVDkPy/zS0LSIrHvYPbDo0Wcp2iZd1l6p04vjBwtD0D5Jx/qQkzIwQhR0Qi+CM1Y1BWgaSF9ipXhirSznvmx68tlGAIBgX1IL9b21Sr3YOTdVVOoP/JE+6TG9ugUXCNWATtXJ0yYxIfWbyriL7f4gGfuugKcPMa1WqT0/4B1DG/Y85suJRPGQZ5qRIDqJG5IDDiXvtnttb6Z0ON0VR8Jj8+J6pLUzmbzYa6n62AxdcNADWJHpbXWR+ZmEZqMLjy2Z1xrcnwZ1voco68WYsWh2sMg2dWzSlNLQP9fMWQ/mGUmRg8k2LQEpD4abJLUj8AlPwnIOY76iuNt+ZhJLvbrEJX4GTIy+xzN1XG1W6GO6gIwxLpi8BWrGG5gagbjRfJPX40tdZgyaOREdQzmS7eSDVky8SL+V54qHEIYWYjYWVjj'
         }
 
         if options:
@@ -232,154 +231,14 @@ class Client(Base):
             cid = ''
         return cid
 
-    def encrypt(self,code):
-        n = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/='
-        s = ''
-        l = 0
-        while l < len(code):
-            try:
-                t = ord(code[l])
-            except IndexError as e:
-                t = 0# t = math.nan
-            l += 1
-            try:
-                r = ord(code[l])
-            except IndexError as e:
-                r = 0 # r = math.nan
-            l += 1
-            try:
-                i = ord(code[l])
-            except IndexError as e:
-                i = 0 # i = math.nan
-            l += 1
-            o = t >> 2
-            a = (3 & t) << 4 | r >> 4
-            # if type(r) or type(i) == 'float':
-            #     print(r,i)
-            u = (15 & r) << 2 | i >> 6
-            c = 63 & i
-            if r == 0:
-                u = c = 64
-            else:
-                c = 64 if i == 0 else c
-            s = s + n[o] + n[a] + n[u] + n[c]
-            # print(s)
-        return s
-    
-    #这个函数可以得到32位int溢出结果，因为python的int一旦超过宽度就会自动转为long，永远不会溢出，有的结果却需要溢出的int作为参数继续参与运算
-    def int_overflow(self,val):
-        maxint = 2147483647
-        if not -maxint-1 <= val <= maxint:
-            val = (val + (maxint + 1)) % (2 * (maxint + 1)) - maxint - 1
-        return val
-    
-    def unsigned_right_shitf(self,n,i):
-        # 数字小于0，则转为32位无符号uint
-        if n<0:
-            n = c_uint32(n).value
-        # 正常位移位数是为正数，但是为了兼容js之类的，负数就右移变成左移好了
-        if i<0:
-            return -self.int_overflow(n << abs(i))
-        #print(n)
-        return self.int_overflow(n >> i)
-    
-    def left_move(self,a,bit):
-        return c_int32(a << bit).value
-
-    def ROTL(self,e,t):
-        return self.left_move(e,t) | self.unsigned_right_shitf(e,32 - t)
-    
-    def toHexStr(self,e):
-        n = ''
-        for r in range(7,-1,-1):
-            t = c_int32(self.unsigned_right_shitf(e,4 * r)).value & c_int32(15).value
-            n += hex(t)[2:]
-        return n
-    
-    def f(self,e,t,n,r):
-        '''这里的值计算出来好像没有问题，但是为什么会没有问题？'''
-        if e == 0:
-            return t & n ^ ~t & r
-        elif e == 1:
-            return t ^ n ^ r
-        elif e == 2:
-            return t & n ^ t & r ^ n & r
-        elif e == 3:
-            return t ^ n ^ r
-        
-
-    def hash_encrypt(self,code,status=False):
-        if not status:
-            code = self.encrypt(code)
-        
-        r = [1518500249, 1859775393, 2400959708, 3395469782]
-        code += chr(128)
-        u = len(code) / 4 + 2
-        c = math.ceil(u / 16)
-        s = [None] * c
-        for i in range(c):
-            s[i] = [None] * 16
-            for a in range(16):
-                try:
-                    _a = self.left_move(ord(code[64 * i + 4 * a]),24)
-                except IndexError:
-                    _a = 0
-                try:
-                    _b = self.left_move(ord(code[64 * i + 4*a + 1]),16)
-                except IndexError:
-                    _b = 0
-                try:
-                    _c = self.left_move(ord(code[64 * i + 4 * a + 2]),8)
-                except IndexError:
-                    _c = 0
-                try:
-                    _d = ord(code[64 * i + 4 * a + 3])
-                except IndexError:
-                    _d = 0
-
-                s[i][a] = _a | _b | _c | _d
-        s[c - 1][14] = 8 * (len(code) -1) / math.pow(2,32)
-        s[c - 1][14] = math.floor(s[c - 1][14])
-        s[c - 1][15] = 8 * (len(code) - 1) & 4294967295
-        m = 1732584193
-        g = 4023233417
-        v = 2562383102
-        T = 271733878
-        S = 3285377520
-        C = [None] * 80
-        for i in range(c):
-            for o in range(16):
-                C[o] = s[i][o]
-            for o in range(16,80):
-                C[o] = self.ROTL(C[o -3] ^ C[o - 8] ^ C[o - 14] ^ C[o - 16],1)
-            l = m
-            f = g
-            d = v
-            p = T
-            h = S
-            for o in range(80):
-                y = math.floor(o / 20)
-                B = self.ROTL(l,5) + self.f(y,f,d,p) + h + r[y] + C[o] & 4294967295
-                h = p
-                p = d
-                d = self.ROTL(f,30)
-                f = l
-                l = B
-            m = c_int32(m + l).value & c_int32(4294967295).value
-            g = c_int32(g + f).value & c_int32(4294967295).value
-            v = c_int32(v + d).value & c_int32(4294967295).value
-            T = c_int32(T + p).value & c_int32(4294967295).value
-            S = c_int32(S + h).value & c_int32(4294967295).value
-        
-        return self.toHexStr(m) + self.toHexStr(g) + self.toHexStr(v) + self.toHexStr(T) + self.toHexStr(S)
-
     def get_umtoken(self,url='https://ynuf.aliapp.org/service/um.json'):
         '''获取um_token'''
         #获取cna的cookie值
-        res = self.H5.get('https://log.mmstat.com/eg.js')
-        res = self.H5.post(url,data={'data':'105!QRe+7JxkF0+z9g+NM+Zhkr0M+V9Qjt9QySeq3E9xKaIqgcHV5c4fMqPC7yFcGLV4JQXfZTXVr4A7ognGVuZ1t0s1zgKdL+m7FeEnzG01lmDDYuByVOE7t0s1zgKBg/skF0Eyzl2MiDmDyaLzKlVVz4ffTWCT5j6wnnDLX8Srdp0S325GCcfthSJkabDcR/7SZV6OB8sd4mhlX3B8tf7rnLmWCnYkVw2aZubW3CtvdpHwBX+1aBvjN7L2CnxeKdjAybxzuBnfGZLGPqNzW3YfC85+eqfz+RxKDftMNSeSo88KyK0xamV4HOiRjavjbRVevPEjqRG9vwmXOBiMHbudYp8Dp57df5voWLBMP1fMEfJdKuZ/U9vY+mP9T4CUvrfWitJFmrtzLw2Sll9YGz+fRfcx6nDYJumwkZU8ngMWt70U/4cKabPmKg84+PyyKI7wFBo4b1VKktrPHon9iDxD2KHQLnuMlQvAynQPB7GTKAZQ0dT8MNnl8DGBo8xIPbLwCWRgGsgdaZQG0R0QhqcTVbweZOlPIXH/PByHPAQi9H1YQg=='})
+        res = self.H5.get('https://log.mmstat.com/eg.js',timeout=3000)
+        res = self.H5.post(url,data={'data':'106!h5xmc0clzUWcx81sHmHI4lxmYX+lQzGzUUam0LHtKjRU56cmfapq6YcPzdHCncxrQGoudp7HxfbvZ28EKYD9SajrWgZPvQJHaDBqufIBJ8Gmo9RvclZwCI2Jm7Gef18rbdkP3jz7HrVjMfzEZCh1URFsPTXJOFYU4v/SP7Eg1UkkyTAZPlZ1U4FJw7v/iu/IKVCU5u8Es+ZU52aU6qOw/RuAPJX2Y77K5FaU4ujcNp+paodlQqjiFQRpLlbR64f5lZqlaS5LVNVllBllQFwurplyr4PhiWaQ4WLU5UWcTtebPSc1+VQOGrk/lJ5DSxgYiC6+WyB6mb47wVVktIKkdQI29yQSLsiR363Bo+90mJc0lpX93brWWL6AUItxxVAUnU+QiddYaSBHsP2diFw267UCSs+h6aoDns7QNR+RgZFcWqLZ7kFMNFy4OPPMvMmHvRsoJUPRzmbFVVHR3em9ie8N7DX6Wk9aNC/mA0GcDuEhxIuT9P1yXADX639yLvkiZ7aFkVU4iaQpOAD+N5on2JHSogWDyjO4fwHARigFGVBxwSPafUYu50nLvB9MlI8yy5RnhoArL/X1fIC4Mp2pOx+Vyml8oKlKcNwoArxzNwT7uFyEklLulzt1wXE=','xa':'taobao_mlogin','xt':''})
         psdata = json.loads(res.text)
-
+        um_token = psdata.get('tn')
+        self.um_token = um_token
         data = {
             'etf':'',
             'xa':'',
@@ -394,7 +253,7 @@ class Client(Base):
             'eca':self.H5.cookies.get('cna',''),
             'ecn':"0853e2dc2b17946f6cf315e412fb6b40a4aa9ec7",
             'eloc':'https%3A%2F%2Flogin.m.taobao.com%2Fmsg_login.htm',
-            'ep':self.hash_encrypt(''),
+            'ep':self.encry.hash_encrypt(''),
             'epl':0,
             'epls':'',
             'esid':'',
@@ -421,11 +280,11 @@ class Client(Base):
             'xt':self.getUmidToken(),
             'xv':'3.3.7'
         }
-        res = self.H5.post(url,data={'data':'ENCODE~~V01~~' + self.encrypt(json.dumps(data))})
+        res = self.H5.post(url,data={'data':'ENCODE~~V01~~' + self.encry.encrypt(json.dumps(data,separators=(',',':')))})
         print(res.text)
         _id = json.loads(res.text)
-        self.H5.cookies.set('umdata_',_id.get('id'),domain='login.m.taobao.com',path='/')
-        return _id.get('tn','')
+        self.H5.cookies.set('_umdata',_id.get('id'),domain='login.m.taobao.com',path='/')
+        return um_token
 
 if __name__ == '__main__':
     
@@ -456,74 +315,7 @@ if __name__ == '__main__':
     if smsdata.get('success'):
 
         smscode = input('请输入验证码：')
-        res = top.msgForm('15623143699',smscode,{'smsTime':smsdata.get('smsTime'),'smsToken':smsdata.get('smsToken')})
+        res = top.msgForm(phone,smscode,{'smsTime':smsdata.get('smsTime'),'smsToken':smsdata.get('smsToken')})
+        # print(res.text)
     else:
         print(smsdata.get('message'))
-    # res = top.encrypt('{"xv":"3.3.7","xt":"1554269482354:0.19720084919117342","etf":"b","siteId":"","uid":"","eml":"AA","etid":"","esid":"","type":"pc","nce":true,"plat":"Win32","nacn":"Mozilla","nan":"Netscape","nlg":"zh-CN","sw":360,"sh":640,"saw":360,"sah":640,"bsw":360,"bsh":398,"eloc":"https%3A%2F%2Flogin.m.taobao.com%2Fmsg_login.htm","etz":480,"ett":1554269537487,"ecn":"0853e2dc2b17946f6cf315e412fb6b40a4aa9ec7","eca":"KDMrFd7kz1kCAd3qgh/fqiQL","cacheid":"dc37a77d8019b693","xh":"","ips":"","epl":0,"ep":"da39a3ee5e6b4b0d3255bfef95601890afd80709","epls":"","esl":false}')
-    # print(res)
-    # res = top.hash_encrypt('')
-    # print(res)
-    res = top.H5.execute({
-        'api':'mtop.taobao.alistar.dimensions.getData',
-        'v':'1.0',
-        'jsv':'2.4.2',
-        'type':'json',
-        'dataType':'jsonp',
-        'data':{
-            'ids':json.dumps({'dimensions':[0,1,2,3]},separators=(',',':'))
-        }
-    })
-    print(res.text)
-    # top.H5.config['domain'] = 'https://h5api.m.taobao.com'
-    # res = top.H5.execute({
-    #     'api':'mtop.taobao.geb.shopinfo.queryshopinfo',
-    #     'v':'2.0',
-    #     'jsv':'2.4.2',
-    #     'dataType':'json',
-    #     'type':'originaljson',
-    #     'AntiCreep':'true',
-    #     'H5Request':'true',
-    #     'data':{
-    #         'sellerId':2248971852
-    #     }
-    # });
-    # print(res.text)
-    # res = top.H5.execute({
-    #     'api':'mtop.taobao.mclaren.getUserProfile',
-    #     'v':'1.0',
-    #     'jsv':'2.4.2',
-    #     'type':'originaljson',
-    #     'dataType':'originaljsonp',
-    #     'isSec':1,
-    #     'jsonpIncPrefix':'weexcb',
-    #     'ttid':'2019@weex_h5_0.12.11',
-    #     'data':{}
-    # })
-    # print(res.text)
-    # top.H5.config['domain'] = 'https://api.m.taobao.com'
-    # top.H5.config['domain'] = 'https://h5api.m.tmall.com' #需要先获取旗下的token
-    # top.H5.config['path'] = 'rest/h5ApiUpdate.do'
-    # res = top.H5.execute({
-    #     'api':"mtop.d4s.service.ExternalizationService.queryStarLevel",
-    #     'v':'1.0',
-    #     'type':'json',
-    #     'dataType':'jsonp',
-    #     'ecode':1,
-    #     'data':{
-    #         'bid':1004827,
-    #         'vid':'f17e4f92ddeee7d2d89eaf1936f806c2'
-    #     }
-    # })
-    # print(res.text)
-    # res = top.H5.execute({
-    #     'api':'mtop.vip.gold.user.customize',
-    #     'v':'1.0',
-    #     'jsv':'2.4.2',
-    #     'type':'json',
-    #     'dataType':'jsonp',
-    #     'timeout':20000,
-    #     'data':{
-    #         'source':'club'
-    #     }
-    # })
-    # print(res.text)
