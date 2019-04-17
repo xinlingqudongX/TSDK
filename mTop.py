@@ -218,7 +218,7 @@ class Client(Base):
             form.update(options)
         
         res = self.H5.post(url,data=form,params={'spm':'','ttid':'h5@iframe','redirectURL':'https://h5.m.taobao.com/other/loginend.html?origin=https%3A%2F%2Fmain.m.taobao.com'})
-        print(res.text)
+        # print(res.text)
         return res
 
     def getUid(self,url:str='https://ynuf.alipay.com/uid'):
@@ -319,3 +319,13 @@ if __name__ == '__main__':
         # print(res.text)
     else:
         print(smsdata.get('message'))
+    
+    res = top.H5.execute({
+        'api':'mtop.taobao.shop.impression.intro.get',
+        'v':'1.0',
+        'type':'originaljson',
+        'AntiCreep':'true',
+        'dataType':'json',
+        'data':{'sellerId':17112733,'shopId':61044576}
+    })
+    print(res)
