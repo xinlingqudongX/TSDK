@@ -30,6 +30,20 @@ class Config(object):
     
     def getConfig(self,name):
         return self.Config_manager.get(name,'')
+
+
+
+class TSDKError(Exception):
+
+    def __init__(self,errInfo):
+        super().__init__(self)
+        self.errinfo = errInfo
+    
+    def __setError(self):
+        pass
+    
+    def __str__(self):
+        return self.errinfo
     
 
 

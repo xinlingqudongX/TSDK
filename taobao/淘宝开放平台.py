@@ -4,9 +4,11 @@ from __future__ import absolute_import
 
 try:
     from .SDK基类 import Base
+    from ..util.config import TSDKError
 except ImportError:
     from SDK基类 import Base
-    
+
+from util.config import TSDKError
 from collections import OrderedDict
 import time
 import json
@@ -37,7 +39,9 @@ class TB_openPlatform(Base):
         self.config = config
     
     def __init(self):
-        self.public_params = OrderedDict();
+        self.public_params = OrderedDict()
+        if not self.config['appkey'] or not self.config['appsecret']:
+            raise TSDKError('缺少appkey或appsecret')
         self.public_params.update({'app_key':self.config['appkey']})
         self.public_params.update({'sign_method':'md5' or 'hmac'})
         self.public_params.update({'timestamp':time.strftime('%Y-%m-%d %H:%M:%S',time.localtime())})
@@ -45,10 +49,10 @@ class TB_openPlatform(Base):
         self.public_params.update({'format':'json'})
     
     def execute(self,apiname:str,datas:dict):
-        options = OrderedDict();
+        options = OrderedDict()
         #初始化公共参数
         self.__init()
-        datas.update(self.public_params);
+        datas.update(self.public_params)
         datas.update({'method':apiname})
         if datas.get('sign_method','md5') == 'hmac':
             sign = self.open_Hmacsign(self.config.get('appsecret',None),datas)

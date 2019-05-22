@@ -164,6 +164,41 @@ class Base(Session):
         sign_str = '&'.join(dt)
 
         return HMAC(f'{secret}'.encode('utf-8'),sign_str.encode('utf-8'))
+    
+    def map2str(self,paramData:dict):
+        '''转换传递的字典为连接字符串'''
+        def resovle(key_name):
+            if paramData.get(key_name) == 'null':
+                return ''
+            elif not isinstance(paramData.get(key_name,''),str):
+                dumpStr = json.dumps(paramData.get(key_name),separators=(',',':'))
+                if key_name == 'data':
+                    return md5(dumpStr.encode()).hexdigest()
+                else:
+                    return dumpStr
+            else:
+                return paramData.get(key_name,'')
+        
+        keyword_ls = ['utdid','uid','reqbiz-ext','appKey','data','t','api','v','sid','ttid','deviceId','lat','lng','x-features']
+        if paramData.get('extdata'):
+            keyword_ls.insert(-1,'extdata')
+        data = list(map(resovle,keyword_ls))
+        sign_str = '&'.join(data)
+        
+        return sign_str
+    
+    def addHeader(self,headers:dict={}):
+        default_headers = {
+            'x-mini-wua':'HHnB_3P3rpjjITYyMfTtldI+UFRpOScjy799La90R\/mybecdU56yAvaqEmEy46f5uQUCDcnIiqfJxLzP4vM0BxDClP8zD\/6RHI1z8StNM6Uqo73b2GC7KN7bQuM\/fXcQeS463',
+            'x-ttid':'700169@travel_android_9.2.5',
+            'x-features-':'27',
+            'x-appkey':'12663307',
+            'x-pv':''
+        }
+        self.headers.update(default_headers)
+        self.headers.update(headers)
+        return
+
 
     # 不能使用静态方法来作为装饰器
     # @staticmethod 
