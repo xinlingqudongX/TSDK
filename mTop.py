@@ -40,7 +40,7 @@ class Client(Base):
 
     def setcookie(self):
         _uab_collina = ''
-        for i in range(20):
+        for _ in range(20):
             if len(_uab_collina) < 11:
                 _uab_collina += str(random())[2:]
             else:
@@ -239,6 +239,7 @@ class Client(Base):
         psdata = json.loads(res.text)
         um_token = psdata.get('tn')
         self.um_token = um_token
+        #   xa参数就是h5login网页里面的appname
         data = {
             'etf':'',
             'xa':'',

@@ -83,6 +83,7 @@ class Encry(object):
         pass
 
     def encrypt(self,code):
+        '''这个就是base64加密'''
         n = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/='
         s = ''
         l = 0

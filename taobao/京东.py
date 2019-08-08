@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import numpy as np 
 from io import BytesIO
+from Crypto.PublicKey import RSA
 
 class JD(Base):
 
@@ -26,6 +27,8 @@ class JD(Base):
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36',
             'Referer':'https://passport.jd.com/new/login.aspx?ReturnUrl=https%3A%2F%2Fwww.jd.com%2F'
         })
+        self._rsaString = "A4FDA453C25A775D18C60EF6867ED9B54486CD296B520F9827AF5D10E3ED9E3420C5A088ABA7DB3DF22DC4D2C1448252E54471171351EB2F81618A88A87152B4F4DD340C045416030608C7469D716E162B9FBEE1D3E1C9AB7CD19A8B011D0DFA3BC536FB6A98D47DC2947E1F2E6D23377D79CF4569D11C0232FF7FB3B72E26A5"
+        
 
     # def g_tk(self,string:str=None,cookieName:str='wq_skey'):
     #     if not string:

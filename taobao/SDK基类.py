@@ -2,7 +2,7 @@
 
 from hashlib import md5,sha1
 from hmac import HMAC
-from urllib.parse import urlsplit,urljoin,quote,unquote,parse_qsl
+from urllib.parse import urlsplit,urljoin,quote,unquote,parse_qsl 
 from collections import OrderedDict
 import json
 import logging
@@ -18,6 +18,8 @@ from requests.exceptions import ProxyError
 from requests import Session
 from threading import Thread,Event
 from http.cookies import SimpleCookie
+from base64 import b64decode , b64encode
+import rsa
 
 
 class Base(Session):
@@ -43,7 +45,7 @@ class Base(Session):
         })
         # self.log = False
         # self.log_format = ''
-    
+        self.um_payload = {"xv":"3.3.7","xt":"H5PWD79aa8f9c1ff38062b628f0d6e571f829","etf":"b","xa":"0000000000000A2126231E1B","siteId":"","uid":"","eml":"AA","etid":"","esid":"","type":"pc","nce":True,"plat":"Win32","nacn":"Mozilla","nan":"Netscape","nlg":"zh-CN","sw":400,"sh":700,"saw":400,"sah":700,"bsw":400,"bsh":700,"eloc":"https%3A%2F%2Fauth.alipay.com%2Flogin%2Fh5Login.htm","etz":480,"ett":1564796746956,"ecn":"b1877374a585615bcfe674df2ed01deaa8c7a1c5","erd":"default,communications,8255636708cdb825d4d6ec28f943f32c3bec6aabffd9ebbbe297ce35ad476ae7,f72a39248d9058f2c328f35ac10a0c7f3a0a5c3a1d897196e6bff8b070488bce,default,communications,e9124033a0785121a6d0554b64dfde8e68570506e1f276fd49c4c522eec35c72","ips":"192.168.10.101","epl":0,"ep":"da39a3ee5e6b4b0d3255bfef95601890afd80709","epls":"","esl":False}
 
     def __getitem__(self,name):
         return getattr(self,name)
@@ -78,6 +80,7 @@ class Base(Session):
     #     return val
     
     def getUmidToken(self):
+        '''获取umidToken'''
         return 'C' + str(int(time() * 1000)) + ''.join(str(choice(range(10))) for _ in range(11)) + str(int(time() * 1000)) + ''.join(str(choice(range(10))) for _ in range(3))
     
     def getCookie(self,name:str="_m_h5_tk",domain:str='.taobao.com',start:int=0,end:int=32):
@@ -257,6 +260,96 @@ class Base(Session):
         '''
         pass   
 
+    def hex2Base64(self,t):
+        ''' 支付宝的js方法，改写'''
+        o = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+        e = 0
+        n = ''
+        r = ''
+        for e in range(0,len(t),3):
+            if e + 3 >= len(t):
+                break
+            n = int(t[e:e + 3],16)
+            r += o[n >> 6] + o[63 & n]
+
+        if e + 1 == len(t):
+            n = int(t[e:e + 1],16)
+            r += o[n << 2]
+        elif e + 2 == len(t):
+            n = int(t[e:e + 2],16)
+            r += o[n >> 2] + o[(3 & n) << 4]
+        while 3 & len(r) > 0:
+            r += '='
+        return r
+
+    def encrypt(self,t:str):
+        ''' 支付宝加密方法'''
+        t = t[:245]
+        counter = 0
+        e = ''
+        while len(e) != 344 and counter < 10:
+            pass
+    
+    def RSAencrypt(self,public_key:'公钥',sign_str:str,salt:'盐'=''):
+        '''通过字符串公钥提取模数和指数生成公钥去加密'''
+        modulus_num , exponent_num = self.str2key(public_key)
+        modulus = int(modulus_num,16)
+        exponent = int(exponent_num,16)
+        rsa_pubkey = rsa.PublicKey(modulus,exponent)
+        crypto = rsa.encrypt(sign_str.encode(),rsa_pubkey)
+        crypto = b64encode(crypto)
+        return crypto.decode()
+    
+    def str2key(self,ts:str):
+        '''字符串公钥提取模数和指数'''
+        # 对字符串解码
+        b_str = b64decode(ts)
+
+        if len(b_str) < 162:
+            return False
+
+        hex_str = ''
+        # 按位转换成16进制
+        for x in b_str:
+            # h = hex(ord(x))[2:]
+            h = hex(x)[2:]
+            h = h.rjust(2, '0')
+            hex_str += h
+
+        # 找到模数和指数的开头结束位置
+        m_start = 29 * 2
+        e_start = 159 * 2
+        m_len = 128 * 2
+        e_len = 3 * 2
+
+        modulus = hex_str[m_start:m_start + m_len]
+        exponent = hex_str[e_start:e_start + e_len]
+
+        return modulus,exponent
+    
+    def alipay_umdata(self,login_url:str,appname:str,view_height:int=700,view_width:int=400,ips:str='192.168.10.10',headers:dict={}):
+        '''获取支付宝的umdata参数'''
+
+        url = 'https://ynuf.alipay.com/service/um.json'
+        self.um_payload.update({
+            'bsh':view_height,
+            'bsw':view_width,
+            'sah':view_height,
+            'saw':view_width,
+            'sh':view_height,
+            'sw':view_width,
+            'ett':int(round(time() * 1000))
+        })
+
+        self.um_payload.update({
+            'eloc':quote(login_url),
+            'xa':appname,
+            'xt':self.cookies.get('umt')
+        })
+        encode_str = b64encode(json.dumps(self.um_payload,separators=(',',':')).encode()).decode()
+        res = self.post(url,data={'data':'ENCODE~~V01~~' + encode_str},headers=headers)
+        return res
+        
 
 
 if __name__ == '__main__':
