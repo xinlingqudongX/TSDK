@@ -290,9 +290,9 @@ class Client(Base):
 if __name__ == '__main__':
     
     top = Client()
-    # umid_token = top.getUmidToken()
-    # res = top.login(umid_token)
-    # print(res.text)
+    umid_token = top.getUmidToken()
+    res = top.login(umid_token)
+    print(res.text)
     # # cookie = {
     # #     '.login.taobao.com':top.cookies.get_dict('.login.taobao.com'),
     # #     '.taobao.com':top.cookies.get_dict('.taobao.com')
@@ -311,22 +311,22 @@ if __name__ == '__main__':
     #     'Referer':'https://s.m.taobao.com/h5?event_submit_do_new_search_auction=1&_input_charset=utf-8&topSearch=1&atype=b&searchfrom=1&action=home%3Aredirect_app_action&from=1&sst=1&n=20&buying=buyitnow&q=%E7%94%B7%E8%A3%85',
     #     'User-Agent':'Dalvik/2.1.0 (Linux; U; Android 7.0; MI 4S MIUI/8.9.13)'
     # }
-    phone = input('请输入手机号：')
-    smsdata = top.sendMsg(phone)
-    if smsdata.get('success'):
+    # phone = input('请输入手机号：')
+    # smsdata = top.sendMsg(phone)
+    # if smsdata.get('success'):
 
-        smscode = input('请输入验证码：')
-        res = top.msgForm(phone,smscode,{'smsTime':smsdata.get('smsTime'),'smsToken':smsdata.get('smsToken')})
-        # print(res.text)
-    else:
-        print(smsdata.get('message'))
+    #     smscode = input('请输入验证码：')
+    #     res = top.msgForm(phone,smscode,{'smsTime':smsdata.get('smsTime'),'smsToken':smsdata.get('smsToken')})
+    #     # print(res.text)
+    # else:
+    #     print(smsdata.get('message'))
     
-    res = top.H5.execute({
-        'api':'mtop.taobao.shop.impression.intro.get',
-        'v':'1.0',
-        'type':'originaljson',
-        'AntiCreep':'true',
-        'dataType':'json',
-        'data':{'sellerId':17112733,'shopId':61044576}
-    })
-    print(res)
+    # res = top.H5.execute({
+    #     'api':'mtop.taobao.shop.impression.intro.get',
+    #     'v':'1.0',
+    #     'type':'originaljson',
+    #     'AntiCreep':'true',
+    #     'dataType':'json',
+    #     'data':{'sellerId':17112733,'shopId':61044576}
+    # })
+    # print(res)

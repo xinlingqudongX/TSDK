@@ -7,7 +7,6 @@ try:
     from ..util.config import TSDKError
 except ImportError:
     from SDK基类 import Base
-
 from util.config import TSDKError
 from collections import OrderedDict
 import time

@@ -18,16 +18,27 @@
   #获取淘宝二维码，可以通过扫码登录淘宝
   umid_token = top.getUmidToken()
   res = top.login(umid_token)
+  # 返回了淘宝登录的二维码
   print(res.text)
   data = json.loads(res.text)
   thr = top.checkState(data['lgToken'],umid_token,30)
   thr.start()
   
+  #手机号登录淘宝
+  phone = input('请输入手机号：')
+  smsdata = top.sendMsg(phone)
+  if smsdata.get('success'):
+    smscode = input('请输入验证码：')
+    res = top.msgForm(phone,smscode,{'smsTime':smsdata.get('smsTime'),'smsToken':smsdata.get('smsToken')})
+    # print(res.text)
+  else:
+    print(smsdata.get('message'))
 
   #设置开放平台的appkey和密钥，然后传递API和配置可以直接获取数据
   top.open.config['appkey'] = ''
   top.open.config['appsecret'] = ''
 
+  # 使用淘宝开放平台的API获取数据
   res = top.open.execute('taobao.tbk.item.get',{
         'fields':'num_iid,title,pict_url,small_images,reserve_price,zk_final_price,user_type,provcity,item_url,seller_id,volume,nick',
         'q':'女装',
@@ -49,7 +60,11 @@
         }
     })
   print(res.text)
+```
 
+
+
+```python
   #API请求日志的记录,SDK对象继承自requests的Session类，可以通过添加hook来获取响应
   #请参考requests高级用法：http://docs.python-requests.org/zh_CN/latest/user/advanced.html
   def console(res):
@@ -76,6 +91,11 @@
 
 ```
 
+### 淘宝H5API的使用
+  1.  在浏览器中找到请求的接口，例如：https://h5api.m.taobao.com/h5/mtop.taobao.detail.getdetail/6.0/?jsv=2.4.8&appKey=12574478&t=1535803615228&sign=fa7b5f3312f9727a25662162bf502aff&api=mtop.taobao.detail.getdetail&v=6.0&dataType=json&ttid=2017%40taobao_h5_6.6.0&AntiCreep=true&type=json&data=%7B%22itemNumId%22%3A%224362046464%22%7D
+  这是请求商品详情的接口
+
+  2.  将链接中的参数提取然后传入请求中
 
 ###  淘宝APP端API
 
