@@ -5,9 +5,11 @@ from setuptools import setup,find_packages
 
 setup(
     name="TSDK",
-    version = "0.2",
+    version = "0.3",
     install_requires = [
         'requests',
+        'Pillow',
+        'loguru'
     ],
     packages = find_packages(),
     #packages = ['TSDK'],
