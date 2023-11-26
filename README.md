@@ -14,33 +14,6 @@ client = TaobaoH5()
 loginStatus = client.qrLogin()
 if not loginStatus:
     print('登录失败')
-
-#设置开放平台的appkey和密钥，然后传递API和配置可以直接获取数据
-top.open.config['appkey'] = ''
-top.open.config['appsecret'] = ''
-
-# 使用淘宝开放平台的API获取数据
-res = top.open.execute('taobao.tbk.item.get',{
-    'fields':'num_iid,title,pict_url,small_images,reserve_price,zk_final_price,user_type,provcity,item_url,seller_id,volume,nick',
-    'q':'女装',
-    'cat':'16,18'
-})
-print(res.text)
-
-#通过淘宝的H5API获取宝贝详情
-res = top.H5.execute({
-    'api':'mtop.taobao.detail.getdetail',
-    'v':'6.0',
-    'jsv':'2.4.8',
-    'dataType':'json',
-    'type':'json',
-    'ttid':'2017%40taobao_h5_6.6.0',
-    'AntiCreep':'true',
-    'data':{
-        'itemNumId':'585559878166'
-    }
-})
-print(res.text)
 ```
 
 ### 淘宝H5API的使用
