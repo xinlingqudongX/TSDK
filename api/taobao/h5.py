@@ -45,12 +45,14 @@ class TaobaoH5(Base):
         super().__init__()
         
         self.func_template = '''
-    def {func_name}(self):
+    def {func_name}(self, data: Any = {}):
         """{desc}"""
 
         method = '{method}'
         params = {payload}
         url = '{scheme}://{hostname}{path}'
+        if data:
+            params['data'].update(data)
 
         request_options = OrderedDict()
         request_options.setdefault('method', method)
