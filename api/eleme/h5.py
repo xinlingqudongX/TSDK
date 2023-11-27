@@ -30,16 +30,16 @@ class ElemeH5(Base):
         method = '{method}'
         params = {payload}
         url = '{scheme}://{hostname}{path}'
+        payload = params.get('data', {formdata})
         if data:
-            params['data'].update(data)
+            payload.update(data)
 
         request_options = OrderedDict()
         request_options.setdefault('method', method)
         request_options.setdefault('url', url)
-        if method.upper() == 'GET':
-            request_options.setdefault('params', params)
-        else:
-            request_options.setdefault('data', params)
+        request_options.setdefault('params', params)
+        if method.upper() == 'POST':
+            request_options.setdefault('data', payload)
 
         return self._execute(request_options)
 '''
@@ -117,7 +117,7 @@ class ElemeH5(Base):
     def render_template(self, kwargs: Any):
         return self.func_template.format(**kwargs)
     
-    def urlCreateFunc(self, api: str, method: str = 'get', func_name: str | None = None, desc: str = ''):
+    def urlCreateFunc(self, api: str, method: str = 'get', func_name: str | None = None, desc: str = '', formdata: Any = {}):
         '''解析API链接为函数'''
         urlObj = urlparse(api)
         
@@ -146,6 +146,7 @@ class ElemeH5(Base):
                 'version': version,
                 'desc': desc if desc else f'{service_name}函数',
                 'method': method,
+                'formdata': formdata,
             })
             f.write(funcStr)
     
@@ -202,5 +203,24 @@ class {typeName}(TypedDict):
             request_options.setdefault('params', params)
         else:
             request_options.setdefault('data', params)
+
+        return self._execute(request_options)
+
+    def MtopAlscWamaiStoreDetailBusinessTabPhone(self, data: Any = {}):
+        """mtop.alsc.wamai.store.detail.business.tab.phone函数"""
+
+        method = 'POST'
+        params = {'jsv': '2.7.2', 'appKey': '12574478', 't': '1701088333698', 'sign': '630d4b8b2f0a555bb22462fb62b990be', 'api': 'mtop.alsc.wamai.store.detail.business.tab.phone', 'v': '1.0', 'type': 'originaljson', 'dataType': 'json', 'timeout': '10000', 'mainDomain': 'ele.me', 'subDomain': 'waimai-guide', 'H5Request': 'true', 'ttid': 'h5@chrome_pc_119.0.0.0', 'SV': '5.0', 'bx_et': 'dBlwr-v97CdZ1VE6eRV4ao-HpLVTs7KWmjZboq005lqiGPDFgDnznRTTsJ03urr0mR2G-64zyPq0jPmEomi-C1NMWE54A4YT1FF1irqIb-GXWsiFgDnzIsGqkszmomLTcFpIWVFYi3t7gQgtWkGeV36by_Z7MSxWVmE0B6Vx4jNrWGh4FNXFT-xoykcnKB6MDaqYYsfPyPyMlV6fZ_X0SREuRkWZyiUhvhlxQiX4IyUUVe8UdPQ83'}
+        url = 'https://waimai-guide.ele.me/h5/mtop.alsc.wamai.store.detail.business.tab.phone/1.0/5.0/'
+        payload = params.get('data', {'eleStoreId': 'E6480404258831972301'})
+        if data:
+            payload.update(data)
+
+        request_options = OrderedDict()
+        request_options.setdefault('method', method)
+        request_options.setdefault('url', url)
+        request_options.setdefault('params', params)
+        if method.upper() == 'POST':
+            request_options.setdefault('data', payload)
 
         return self._execute(request_options)
