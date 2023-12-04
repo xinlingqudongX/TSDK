@@ -1,8 +1,8 @@
-from ..types import taobao
+from ..types import taobao, eleme
 from ..base import Base
 from pathlib import Path
 import re
-from urllib.parse import urlparse, parse_qsl
+from urllib.parse import urlparse, parse_qsl, quote
 from typing import Any, Dict, List
 import json
 from collections import OrderedDict
@@ -105,7 +105,7 @@ class ElemeH5(Base):
         resj: taobao.ApiRes = res.json()
 
         if res.status_code != 200:
-            self.logger.error('API请求失败:{api}', res.text)
+            self.logger.error('API请求失败:{rtxt}', rtxt=res.text)
         else:
             ret = resj.get('ret')
             retMsg = ret[0]
@@ -186,6 +186,30 @@ class {typeName}(TypedDict):
                 'fieldStr': fieldStr,
             })
             f.write(typeStr)
+    
+    def searchPoiNearby(self, keyword: str, latitude: float, longitue: float, offset: int = 0, limit: int = 20):
+        '''搜索附近地址'''
+        url = 'https://h5.ele.me/restapi/bgs/poi/search_poi_nearby'
+        res = self.get(url, params={
+            'keyword': quote(keyword),
+            'offset': offset,
+            'limit': limit,
+            'latitude': latitude,
+            'longitude': longitue,
+        })
+        resj: List[eleme.SearchPoiNearbyRes] = res.json()
+        return resj
+
+    def reverseGeoCoding(self, longitude: float, latitude: float):
+        '''重新定位'''
+        url = 'https://h5.ele.me/restapi/bgs/poi/reverse_geo_coding'
+        res = self.get(url,params={
+            'latitude': latitude,
+            'longitude': longitude
+        })
+        resj: eleme.reverseGeoCodingRes = res.json()
+        return resj
+
 
     def MtopVenusShopresourceserviceGetshopresource(self, data: Any = {}):
         """mtop.venus.shopresourceservice.getshopresource函数"""

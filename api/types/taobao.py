@@ -15,6 +15,12 @@ class QrStateRes(TypedDict):
     code: str
     url: str
 
+class QrStateRes2Data(TypedDict):
+    ck: str
+    codeContent: str
+    resultCode: int
+    t: int
+    
 class QrStateCode(Enum):
     扫码成功 = '10006'
     正在扫码 = '10001'

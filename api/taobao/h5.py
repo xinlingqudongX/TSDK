@@ -43,6 +43,7 @@ class TaobaoH5(Base):
 
     def __init__(self) -> None:
         super().__init__()
+        self.login_url = 'https://login.m.taobao.com/mlogin/login.htm'
         
         self.func_template = '''
     def {func_name}(self, data: Any = {}):
@@ -105,6 +106,15 @@ class TaobaoH5(Base):
             return token[0:32]
         
         self.logger.error('从cookie获取的token为空')
+        return ''
+
+    @property
+    def hsiz(self):
+        token = self.cookies.get('cookie2', domain='.taobao.com', default='')
+        if not token is None and len(token) > 0:
+            return token
+        
+        self.logger.error('从cookie获取的hsiz为空')
         return ''
 
     @property
@@ -220,6 +230,34 @@ class TaobaoH5(Base):
         resj: taobao.QrStateRes = res.json()
         self.logger.debug('检查qrcode登录状态:{resj}', resj=resj)
         return resj
+
+    # def qrLogin2(self):
+    #     res = self.get('https://login.taobao.com/newlogin/qrcode/generate.do', params={
+    #         'appName': 'taobao',
+    #         'fromSite': 0,
+    #         'sub': True,
+    #         'allp': 'assets_css=3.0.10/login_pc.css',
+    #         'appEntrance': 'tmall',
+    #         '_csrf_token':'',
+    #         'umidToken': '',
+    #         'hsiz':'',
+    #         'newMini2': True,
+    #         'bizParams':'',
+    #         'full_redirect': True,
+    #         'style':'miniall',
+    #         'appkey':'00000000',
+    #         'from':'tmall',
+    #         'isMobile': False,
+    #         'lang':'zh_CN',
+    #         'returnUrl':'',
+    #         'umidTag':'SERVER',
+    #     })
+    #     resj = res.json()
+    #     hasError = resj.get('hasError')
+    #     if hasError:
+    #         self.logger.error('请求错误:{resj}', resj=resj)
+    #     resData:taobao.QrStateRes2Data = resj.get('content',{}).get('data')
+    #     return resData
 
     def urlCreateFunc(self, api: str, method: str = 'get', func_name: str | None = None, desc: str = ''):
         '''解析API链接为函数'''
