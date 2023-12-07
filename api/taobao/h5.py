@@ -46,7 +46,7 @@ class TaobaoH5(Base):
         self.login_url = 'https://login.m.taobao.com/mlogin/login.htm'
         
         self.func_template = '''
-    def {func_name}(self, data: Any = {}):
+    def {func_name}(self, data: Any = {{}}):
         """{desc}"""
 
         method = '{method}'
