@@ -38,6 +38,9 @@ class TaobaoH5(Base):
         'cookie1',
         '_m_h5_tk',
         '_m_h5_tk_enc',
+        'sgcookie',
+        #   验证码通过后的cookie
+        'x5sec',
     ]
     createTypesFile: bool = False
 
@@ -155,6 +158,7 @@ class TaobaoH5(Base):
             't': timestamp,
             'type': 'json',
             'dataType': 'json',
+            'callback': '',
         })
         payloadData = payload.get('data', {})
         dataStr = json.dumps(payloadData, separators=(',', ':'))

@@ -53,7 +53,7 @@ class Base(Session):
     
     def loadCookieStr(self, cookieStr: str, domain:str = ''):
         '''将从浏览器获取到cookie字符串转成字典'''
-        ls = cookieStr.replace(' ','').split(';')
+        ls = cookieStr.strip(';').replace(' ','').split(';')
         cookieList = [re.split(r'=',cookie,1) for cookie in ls]
         for cookieName,cookieValue in cookieList:
             self.cookies.set(cookieName, cookieValue, domain=domain)
