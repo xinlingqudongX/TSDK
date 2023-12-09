@@ -9,7 +9,9 @@ setup(
     install_requires = [
         'requests',
         'Pillow',
-        'loguru'
+        'loguru',
+        'playwright',
+        'pytest-playwright'
     ],
     packages = find_packages(),
     #packages = ['TSDK'],

@@ -4,14 +4,18 @@ from collections import OrderedDict
 from pathlib import Path
 from PIL import Image
 from io import BytesIO
+from requests import Response
+from playwright.sync_api import sync_playwright, Page
 import hashlib
 import datetime
 import json
+from json import JSONDecodeError
 import time
 import random
 import re
 from ..types import taobao
 from ..base import Base
+
 
 class RequestOptions(TypedDict):
     method: str
@@ -43,6 +47,10 @@ class TaobaoH5(Base):
         'x5sec',
     ]
     createTypesFile: bool = False
+    
+    fail_ret_status = {
+        'FAIL_SYS_USER_VALIDATE': ''
+    }
 
     def __init__(self) -> None:
         super().__init__()
@@ -87,15 +95,20 @@ class TaobaoH5(Base):
         cna = re.findall(r'Etag="(.*?)"',res.text)[0]
         self.cookies.set('cna',cna,domain='.taobao.com',path='/')
 
-        #第三个cookie，isg为算法生成的，不好破解，domain为.taobao.com，path为/
-        isg = 'BM3NGuFcrQh-tgkk_KLDk9jr3OlHqgF8pnooOQ9SCWTTBu241_oRTBuUcNrFxhk0'
-        self.cookies.set('isg',isg,domain='.taobao.com',path='/')
+        # #第三个cookie，isg为算法生成的，不好破解，domain为.taobao.com，path为/
+        # isg = 'BM3NGuFcrQh-tgkk_KLDk9jr3OlHqgF8pnooOQ9SCWTTBu241_oRTBuUcNrFxhk0'
+        # self.cookies.set('isg',isg,domain='.taobao.com',path='/')
 
-        #第四个cookie，l为算法生成,domain为.taobao.com，path为/
-        l = 'bBgKwFjlv-QtIl3JBOCanurza77OSIRYYuPzaNbMi_5pK6T_Bk7OlgnjDF96Vj5RsxYB4-L8Y1J9-etkZ'
-        self.cookies.set('l',l,domain='.taobao.com',path='/')
+        # #第四个cookie，l为算法生成,domain为.taobao.com，path为/
+        # l = 'bBgKwFjlv-QtIl3JBOCanurza77OSIRYYuPzaNbMi_5pK6T_Bk7OlgnjDF96Vj5RsxYB4-L8Y1J9-etkZ'
+        # self.cookies.set('l',l,domain='.taobao.com',path='/')
 
+        #   初始化_tb_token,cookie2,t等cookie
+        self.get('https://h5api.m.taobao.com/h5/mtop.user.getusersimple/1.0/')
         self.get('https://h5api.m.taobao.com/h5/mtop.taobao.wireless.home.load/1.0/?appKey=12574478')
+        self.cookies.set('thw','cn', domain='.taobao.com',path='/')
+        self.cookies.set('xlly_s','1', domain='.taobao.com',path='/')
+        self.cookies.set('_samesite_flag_','true', domain='.taobao.com',path='/')
 
     def clearCookie(self):
         for key in self.cookies.iterkeys():
@@ -167,18 +180,34 @@ class TaobaoH5(Base):
             'data': dataStr
         })
         self.logger.debug('{method}请求:{payload}', payload=payload, method=method.upper())
+        self.headers.update({
+            'Referer': 'https://h5.m.taobao.com'
+        })
         res = self.request(**request_options)
-        resj: taobao.ApiRes = res.json()
+        try:
+            resj: taobao.ApiRes = res.json()
+            if res.status_code != 200:
+                self.logger.error('API请求失败:{api}', res.text)
+            else:
+                ret = resj.get('ret')
+                if not any(filter(lambda retStatus: 'SUCCESS' in retStatus, ret)):
+                    self.logger.error('API请求失败:{ret}', ret=ret)
+                    if len(ret) >= 2:
+                        retStatus, retMsg, *_ = ret
+                    
+                        if retStatus in self.fail_ret_status:
+                            jumpUrl = resj.get('data', {}).get('url')
+                            if jumpUrl:
+                                self.__hookX5(res, jumpUrl)
 
-        if res.status_code != 200:
-            self.logger.error('API请求失败:{api}', res.text)
-        else:
-            ret = resj.get('ret')
-            retMsg = ret[0]
-            if 'SUCCESS' not in retMsg.upper():
-                self.logger.error('API请求失败:{ret}', ret=ret)
-
-        return (resj, res)
+            return (resj, res)
+        except JSONDecodeError as err:
+            self.__hookX5(res)
+            return {}, res
+            
+        except Exception as err:
+            self.logger.error('请求错误：{err}', err=err)
+            return {}, res
 
     def qrLogin(self, timeout: int = 60) -> bool:
         '''二维码登录'''
@@ -262,6 +291,73 @@ class TaobaoH5(Base):
     #         self.logger.error('请求错误:{resj}', resj=resj)
     #     resData:taobao.QrStateRes2Data = resj.get('content',{}).get('data')
     #     return resData
+
+    def __hookX5(self, res: Response, jumpUrl: str = ''):
+        ufeResult = res.headers.get('ufe-result')
+        x5PunishCache = res.headers.get('x5-punish-cache')
+        bxpunish = res.headers.get('bxpunish')
+        via = res.headers.get('via')
+        bxuuid = res.headers.get('bxuuid')
+
+        if not all([ufeResult, x5PunishCache, bxpunish, via]):
+            return
+        
+        if not jumpUrl and 'x5referer' in res.text:
+            locationHref = re.findall(r'href\s*=\s*"(.*?)"', res.text)
+            if len(locationHref) <= 0:
+                self.logger.error('提取跳转链接失败:{rtxt}',rtxt=res.text)
+                return
+            
+            jumpUrl = locationHref[0] + quote(res.url)
+
+        self.logger.debug('打开链接:{jumpUrl}', jumpUrl=jumpUrl)
+        playwright = sync_playwright().start()
+        iPhone13 = playwright.devices['iPhone 13']
+        self.logger.debug('设备列表:{devices}',devices=playwright.devices)
+        browser = playwright.chromium.launch(headless=False, devtools=True)
+        context = browser.new_context(
+            **iPhone13,
+            # is_mobile=False,
+            # device_scale_factor=1.0,
+            record_video_dir='video/',
+        )
+        cookie: List[Any] = [{ 'name': cookie.name, 'value': cookie.value, 'domain': cookie.domain, 'path': cookie.path} for cookie in self.cookies]
+        context.add_cookies(cookie)
+        page = context.new_page()
+        page.goto(jumpUrl)
+
+        page.screenshot(path="example.png")
+
+        self.__drag_element(page)
+        browser.close()
+
+        playwright.stop()
+    
+    def __drag_element(self, page: Page, elementSelector: str = '#nc_1_n1z'):
+        element = page.locator(elementSelector)
+        if not element:
+            self.logger.error('未找到元素', elementSelector)
+            return
+        
+        elementPos = element.bounding_box()
+        if not elementPos:
+            self.logger.error('获取位置出错')
+            return
+        
+        target_pos = { 'x': elementPos['x'] + 300, 'y': elementPos['y']}
+
+        element.hover()
+        page.mouse.down()
+        page.mouse.move(target_pos['x'], target_pos['y'])
+        page.mouse.up()
+
+        refreshElement = page.locator('`nc_1_refresh1`')
+        if refreshElement:
+            self.logger.error('拖动识别失败，请手动操作')
+            
+            #   等待人工操作
+        
+
 
     def urlCreateFunc(self, api: str, method: str = 'get', func_name: str | None = None, desc: str = ''):
         '''解析API链接为函数'''
@@ -352,6 +448,25 @@ class {typeName}(TypedDict):
             'data': {}
         }
         url = 'https://h5api.m.taobao.com/h5/mtop.user.getusersimple/1.0/'
+
+        request_options = OrderedDict()
+        request_options.setdefault('method', method)
+        request_options.setdefault('url', url)
+        if method.upper() == 'GET':
+            request_options.setdefault('params', params)
+        else:
+            request_options.setdefault('data', params)
+
+        return self._execute(request_options)
+
+    def MtopTaobaoDetailGetdesc(self, data: Any = {}):
+        """mtop.taobao.detail.getdesc函数"""
+
+        method = 'get'
+        params = {'jsv': '2.7.0', 'appKey': '12574478', 't': '1702123718466', 'sign': 'd2f777fa25b2bee1d9088f6b267c01bb', 'api': 'mtop.taobao.detail.getdesc', 'v': '6.0', 'isSec': '0', 'ecode': '0', 'AntiFlood': 'true', 'AntiCreep': 'true', 'H5Request': 'true', 'timeout': '3000', 'type': 'jsonp', 'dataType': 'jsonp', 'callback': 'mtopjsonp3', 'data': {'spm': 'a215s.7406091.recommend.1', 'id': '2559069051', 'scm': '1007.18975.229300.0', 'pvid': '15febaba-0e7a-40a9-8e7e-5bbf1cfeec4c', 'utparam': '%7B%22ranger_buckets_native%22%3A%22%22%2C%22x_object_type%22%3A%22item%22%2C%22mtx_ab%22%3A9%2C%22mtx_sab%22%3A0%2C%22scm%22%3A%221007.18975.229300.0%22%2C%22x_object_id%22%3A%222559069051%22%7D', 'type': '0'}}
+        url = 'https://h5api.m.taobao.com/h5/mtop.taobao.detail.getdesc/6.0/'
+        if data:
+            params['data'].update(data)
 
         request_options = OrderedDict()
         request_options.setdefault('method', method)
