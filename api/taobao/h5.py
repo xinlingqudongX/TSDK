@@ -6,6 +6,8 @@ from PIL import Image
 from io import BytesIO
 from requests import Response
 from playwright.sync_api import sync_playwright, Page
+from playwright.sync_api import Response as PlayResponse
+from playwright.sync_api import Request as PlayRequest
 import hashlib
 import datetime
 import json
@@ -314,7 +316,7 @@ class TaobaoH5(Base):
         playwright = sync_playwright().start()
         iPhone13 = playwright.devices['iPhone 13']
         self.logger.debug('设备列表:{devices}',devices=playwright.devices)
-        browser = playwright.chromium.launch(headless=False, devtools=True)
+        browser = playwright.chromium.launch(headless=False, devtools=self.debug)
         context = browser.new_context(
             **iPhone13,
             # is_mobile=False,
@@ -356,8 +358,46 @@ class TaobaoH5(Base):
             self.logger.error('拖动识别失败，请手动操作')
             
             #   等待人工操作
-        
+    
+    def handleRequest(self, request: PlayRequest):
+        pass
 
+
+    def handleResponse(self, response: PlayResponse):
+        if '?jsv=' not in response.request.url:
+            return
+        
+        method = response.request.method
+        self.logger.debug('请求:{url}',url=response.url)
+        self.logger.debug('提交数据:{data}',data=response.request.post_data)
+        self.urlCreateFunc(response.url, method)
+
+    def handleRequestFinish(self, response: PlayRequest):
+        pass
+        
+    def jsvApiAutoCreate(self, urls:List[str], headless=False):
+        '''自动通过URL列表捕获请求并生成API'''
+
+        self.logger.debug('打开链接:{jumpUrl}', jumpUrl=urls)
+        playwright = sync_playwright().start()
+        iPhone13 = playwright.devices['iPhone 13']
+        self.logger.debug('设备列表:{devices}',devices=playwright.devices)
+        browser = playwright.chromium.launch(headless=headless, devtools=self.debug)
+        context = browser.new_context(
+            **iPhone13,
+            # is_mobile=False,
+            # device_scale_factor=1.0,
+        )
+        cookie: List[Any] = [{ 'name': cookie.name, 'value': cookie.value, 'domain': cookie.domain, 'path': cookie.path} for cookie in self.cookies]
+        context.add_cookies(cookie)
+        page = context.new_page()
+        page.on('request', self.handleRequest)
+        page.on('response', self.handleResponse)
+        page.on('requestfinished', self.handleRequestFinish)
+
+        for url in urls:
+            page.goto(url, wait_until='domcontentloaded')
+            page.wait_for_load_state('load')
 
     def urlCreateFunc(self, api: str, method: str = 'get', func_name: str | None = None, desc: str = ''):
         '''解析API链接为函数'''
@@ -368,14 +408,24 @@ class TaobaoH5(Base):
 
         func_name = func_name if func_name else ''.join([i.capitalize() for i in service_name.split('.')])
         if hasattr(self, func_name):
+            self.logger.debug('已存在函数:{func_name}',func_name=func_name)
             return
+        
+        with open(__file__, 'r', encoding='utf-8') as f:
+            context = f.read()
+            if func_name in context:
+                self.logger.debug('已存在函数:{func_name}',func_name=func_name)
+                return
         
         for key in queryParams:
             val = queryParams[key]
             if len(re.findall(r'\{.*?\}|\[.*?\]', val)) > 0:
-                queryParams[key] = json.loads(val)
+                try:
+                    queryParams[key] = json.loads(val)
+                except JSONDecodeError as err:
+                    queryParams[key] = val
         
-        with open(__file__, 'a+', encoding='utf-8') as f:
+        with open(__file__, 'a+', encoding='utf-8') as f:            
             funcStr = self.render_template({
                 'payload': queryParams,
                 'hostname': urlObj.hostname,
@@ -448,25 +498,6 @@ class {typeName}(TypedDict):
             'data': {}
         }
         url = 'https://h5api.m.taobao.com/h5/mtop.user.getusersimple/1.0/'
-
-        request_options = OrderedDict()
-        request_options.setdefault('method', method)
-        request_options.setdefault('url', url)
-        if method.upper() == 'GET':
-            request_options.setdefault('params', params)
-        else:
-            request_options.setdefault('data', params)
-
-        return self._execute(request_options)
-
-    def MtopTaobaoDetailGetdesc(self, data: Any = {}):
-        """mtop.taobao.detail.getdesc函数"""
-
-        method = 'get'
-        params = {'jsv': '2.7.0', 'appKey': '12574478', 't': '1702123718466', 'sign': 'd2f777fa25b2bee1d9088f6b267c01bb', 'api': 'mtop.taobao.detail.getdesc', 'v': '6.0', 'isSec': '0', 'ecode': '0', 'AntiFlood': 'true', 'AntiCreep': 'true', 'H5Request': 'true', 'timeout': '3000', 'type': 'jsonp', 'dataType': 'jsonp', 'callback': 'mtopjsonp3', 'data': {'spm': 'a215s.7406091.recommend.1', 'id': '2559069051', 'scm': '1007.18975.229300.0', 'pvid': '15febaba-0e7a-40a9-8e7e-5bbf1cfeec4c', 'utparam': '%7B%22ranger_buckets_native%22%3A%22%22%2C%22x_object_type%22%3A%22item%22%2C%22mtx_ab%22%3A9%2C%22mtx_sab%22%3A0%2C%22scm%22%3A%221007.18975.229300.0%22%2C%22x_object_id%22%3A%222559069051%22%7D', 'type': '0'}}
-        url = 'https://h5api.m.taobao.com/h5/mtop.taobao.detail.getdesc/6.0/'
-        if data:
-            params['data'].update(data)
 
         request_options = OrderedDict()
         request_options.setdefault('method', method)
