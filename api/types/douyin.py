@@ -59,6 +59,11 @@ class QrLoginRes(TypedDict):
     error_code: int
     message: str
 
+class ErrorRes(TypedDict):
+    status_code: int
+    status_msg: str
+    log_pb: dict
+
 class ProfileOtherUserType(TypedDict):
     apple_account: int
     avatar_168x168: Dict[str, Any]
@@ -193,9 +198,44 @@ class WareCsrfToken(TypedDict):
     timeout: bool
     value: str
 
+
+class VideoCommentDetailType(TypedDict):
+    cid: str
+    text: str
+    aweme_id: str
+    create_time: int
+    digg_count: int
+    status: int
+    user: Dict[str, Any]
+    reply_id: str
+    user_digged: int
+    reply_comment: str
+    text_extra: List[Any]
+    label_text: str
+    label_type: int
+    reply_comment_total: int
+    reply_to_reply_id: str
+    is_author_digged: int
+    stick_position: int
+    user_buried: int
+    label_list: str
+    is_hot: int
+    text_music_info: str
+    image_list: str
+    is_note_comment: int
+    ip_label: str
+    can_share: int
+    item_comment_total: int
+    level: int
+    video_list: str
+    sort_tags: str
+    is_user_tend_to_reply: int
+    content_type: int
+    is_folded: int
+
 class VideoCommentType(TypedDict):
     status_code: int
-    comments: List[Any]
+    comments: List[VideoCommentDetailType]
     cursor: int
     has_more: int
     reply_style: int

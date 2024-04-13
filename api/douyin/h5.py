@@ -15,6 +15,7 @@ import os
 import json
 import requests
 import jsbeautifier
+import datetime
 
 class DouyinH5(Base):
 
@@ -172,6 +173,20 @@ class DouyinH5(Base):
             return token
         
         return self.generate_random_str(124)
+
+    @property
+    def hasLogin(self):
+        login_cookies = ['sid_tt','sessionid','sessionid_ss','sid_guard']
+        if not any(map(lambda cookieName:self.cookies.get(cookieName), login_cookies)):
+            return False
+        
+        return True
+    
+    def setSessionid(self, sessionid: str):
+        login_cookies = ['sid_tt','sessionid','sessionid_ss']
+        sid_guard = login_cookies.pop()
+        for cookieName in login_cookies:
+            self.cookies.set(cookieName, sessionid, domain='.douyin.com', path='/')
     
     def handleResponse(self, response: PlayResponse):
         # self.logger.debug('playwright请求url: {}', response.request.url)
@@ -346,8 +361,6 @@ if(process.argv.length > 2){
             'language': 'zh',
             'verifyFp': self.fp,
             'fp': self.fp,
-            'msToken': self.msToken,
-            'X-Bogus': 'DFSzswVuzeD3FX/Itubv5l9WX7rO',
         })
         result: douyin.QrLoginRes = res.json()
         if result.get('error_code') != 0:
@@ -365,7 +378,8 @@ if(process.argv.length > 2){
         while timeout > 0:
             jumpUrl = self.checkQr(token)
             if jumpUrl:
-                self.get(jumpUrl)
+                res = self.get(jumpUrl)
+                print(res)
                 return True
             time.sleep(1)
             timeout -= 1
@@ -477,6 +491,9 @@ if(process.argv.length > 2){
         res = self.get(url)
     
     def videoComments(self, aweme_id: str, cursor=1,count = 20):
+        if not self.hasLogin:
+            raise Exception('未登录')
+        
         url = 'https://www.douyin.com/aweme/v1/web/comment/list/'
         params = {
             **self.defaultParams(4),
@@ -486,9 +503,8 @@ if(process.argv.length > 2){
         }
 
         res = self.get(url,params=params, headers={
-            'referer':'https://www.douyin.com/discover?modal_id=7353827429447699712',
+            'referer':'https://www.douyin.com/',
             'host': 'www.douyin.com',
-            'cookie':'ttwid=1%7CP_yaaU2EJwDb6axCx1ejJEO8Udl76Qtud0WYR0yFNpA%7C1712149098%7C72cb56a9931184024ec6f3a5e2b4efdc52c53e901bae32f6a65ac6ac48060bd8; dy_swidth=1920; dy_sheight=1080; passport_csrf_token=eea59a7c4564724e9b4dc25572a9f83a; passport_csrf_token_default=eea59a7c4564724e9b4dc25572a9f83a; bd_ticket_guard_client_web_domain=2; download_guide=%223%2F20240403%2F0%22; pwa2=%220%7C0%7C3%7C0%22; volume_info=%7B%22isUserMute%22%3Afalse%2C%22isMute%22%3Afalse%2C%22volume%22%3A0.5%7D; douyin.com; device_web_cpu_core=16; device_web_memory_size=8; architecture=amd64; csrf_session_id=3bef5b4a9ff04d33c1c3eb6e23298a57; xgplayer_user_id=902129266265; xg_device_score=7.90435294117647; __live_version__=%221.1.1.9068%22; live_can_add_dy_2_desktop=%220%22; live_use_vvc=%22false%22; FORCE_LOGIN=%7B%22videoConsumedRemainSeconds%22%3A180%2C%22isForcePopClose%22%3A1%7D; stream_player_status_params=%22%7B%5C%22is_auto_play%5C%22%3A0%2C%5C%22is_full_screen%5C%22%3A0%2C%5C%22is_full_webscreen%5C%22%3A0%2C%5C%22is_mute%5C%22%3A0%2C%5C%22is_speed%5C%22%3A1%2C%5C%22is_visible%5C%22%3A0%7D%22; __ac_signature=_02B4Z6wo00f01.bzkjAAAIDAy1qIr.46DCv205aAAJu8c4; strategyABtestKey=%221712208759.823%22; GlobalGuideTimes=%221712208983%7C0%22; xgplayer_device_id=26858847177; s_v_web_id=verify_lul0plcd_f8463012_e580_5a22_ac47_0ac6c2a4c063; n_mh=6qq-cGgTT9fkYiwsN45Jh1uyewEXJiS4wSqKokLJKfI; _bd_ticket_crypt_doamin=2; LOGIN_STATUS=1; __security_server_data_status=1; stream_recommend_feed_params=%22%7B%5C%22cookie_enabled%5C%22%3Atrue%2C%5C%22screen_width%5C%22%3A1920%2C%5C%22screen_height%5C%22%3A1080%2C%5C%22browser_online%5C%22%3Atrue%2C%5C%22cpu_core_num%5C%22%3A16%2C%5C%22device_memory%5C%22%3A8%2C%5C%22downlink%5C%22%3A10%2C%5C%22effective_type%5C%22%3A%5C%224g%5C%22%2C%5C%22round_trip_time%5C%22%3A50%7D%22; d_ticket=031e11614692a594af527a4f35527105d6a25; passport_assist_user=CjxmqckqHS9cNNXQKiDoomR2Ip6CPjc06gE08Ogw7u31i2XbZRcjgVsD6suNoVvsO9hruMrYsOlsGB9vtfQaSgo8Z__4BxWBkFivXNBezpLEHrFJAf_8qdROk95rQIK9t5OWWKH2RZHGzFvNL76qaE-lbqXflvrrjGjcr93XEP3izQ0Yia_WVCABIgED-2MemQ%3D%3D; sso_uid_tt=29db5759c7a863686fbc6282bf936250; sso_uid_tt_ss=29db5759c7a863686fbc6282bf936250; toutiao_sso_user=df5d7c87c54beb0d0b6b17c5402a64e5; toutiao_sso_user_ss=df5d7c87c54beb0d0b6b17c5402a64e5; sid_ucp_sso_v1=1.0.0-KDY3Y2ZhYTY5NWMyMjhkNjhlMzQxNDU0MGY5ODE5MmMxZjI0OTg3NGMKHQiSvPzv9AEQ5Lu6sAYY7zEgDDCiv6_MBTgGQPQHGgJscSIgZGY1ZDdjODdjNTRiZWIwZDBiNmIxN2M1NDAyYTY0ZTU; ssid_ucp_sso_v1=1.0.0-KDY3Y2ZhYTY5NWMyMjhkNjhlMzQxNDU0MGY5ODE5MmMxZjI0OTg3NGMKHQiSvPzv9AEQ5Lu6sAYY7zEgDDCiv6_MBTgGQPQHGgJscSIgZGY1ZDdjODdjNTRiZWIwZDBiNmIxN2M1NDAyYTY0ZTU; passport_auth_status=6e6355a233edc2a2f441c60ba6b178d6%2C29b855bbc880652916e91bc5eec68336; passport_auth_status_ss=6e6355a233edc2a2f441c60ba6b178d6%2C29b855bbc880652916e91bc5eec68336; uid_tt=4c425b9b724457ce67f40c66d2f25491; uid_tt_ss=4c425b9b724457ce67f40c66d2f25491; sid_tt=8ce8edd349ea9e523a1ab56826a156f2; sessionid=8ce8edd349ea9e523a1ab56826a156f2; sessionid_ss=8ce8edd349ea9e523a1ab56826a156f2; store-region=cn-hb; store-region-src=uid; _bd_ticket_crypt_cookie=d44b93ba1fa2a1eaa729954eb164e71d; bd_ticket_guard_client_data=eyJiZC10aWNrZXQtZ3VhcmQtdmVyc2lvbiI6MiwiYmQtdGlja2V0LWd1YXJkLWl0ZXJhdGlvbi12ZXJzaW9uIjoxLCJiZC10aWNrZXQtZ3VhcmQtcmVlLXB1YmxpYy1rZXkiOiJCQTlaQ1dLTFh6NnFtT1pua1BiYTFaa3daQjY5N2pMdE1MZzVkZVVxUWl1SzJ1OVZ2eVM5SkhWUEUyWWVWUVVhNmExMHB3SGxPWHppNXYwMEtsbUZpalU9IiwiYmQtdGlja2V0LWd1YXJkLXdlYi12ZXJzaW9uIjoxfQ%3D%3D; passport_fe_beating_status=true; sid_guard=8ce8edd349ea9e523a1ab56826a156f2%7C1712233961%7C5183998%7CMon%2C+03-Jun-2024+12%3A32%3A39+GMT; sid_ucp_v1=1.0.0-KDYzNmY2MWIwZDY4NzFjYTAzNDZmNjQ2ZjUyNzUxYTY0OWE0MGRhZDAKGQiSvPzv9AEQ6bu6sAYY7zEgDDgGQPQHSAQaAmxxIiA4Y2U4ZWRkMzQ5ZWE5ZTUyM2ExYWI1NjgyNmExNTZmMg; ssid_ucp_v1=1.0.0-KDYzNmY2MWIwZDY4NzFjYTAzNDZmNjQ2ZjUyNzUxYTY0OWE0MGRhZDAKGQiSvPzv9AEQ6bu6sAYY7zEgDDgGQPQHSAQaAmxxIiA4Y2U4ZWRkMzQ5ZWE5ZTUyM2ExYWI1NjgyNmExNTZmMg; home_can_add_dy_2_desktop=%221%22; publish_badge_show_info=%220%2C0%2C0%2C1712233965432%22; odin_tt=cc48278aebcee3cb75cf143e567c55b253d0cd29ad06bf6c1dcef68adeb5debd04b40d22a0b822f3373fb115a467adf1; msToken=RtGlT1FVMcYm8sdZDpxtEk1A7ehXyXtAGfhKbnldEkWmS6Aj4yXPDrQjMTZlMlpVi-6KmYV0YHi-m3K3GCfhyQ5fldkgHZRxNQcZkd1ARbT-Wq0k_I_DiPAD-29o6Q==; IsDouyinActive=true',
             'user-agent':self.userAgent,
         })
         # print(res.request.headers)
@@ -607,6 +623,7 @@ class {name}Type(TypedDict):
 sid_tt=876ef0e20d
 sessionid=876ef0
 sessionid_ss=876e
+sid_guard   重要
 
 {"s0":"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=","s1":"Dkdpgh4ZKsQB80/Mfvw36XI1R25+WUAlEi7NLboqYTOPuzmFjJnryx9HVGcaStCe=","s2":"Dkdpgh4ZKsQB80/Mfvw36XI1R25-WUAlEi7NLboqYTOPuzmFjJnryx9HVGcaStCe=","s3":"ckdp1h4ZKsUB80/Mfvw36XIgR25+WQAlEi7NLboqYTOPuzmFjJnryx9HVGDaStCe","s4":"Dkdpgh2ZmsQB80/MfvV36XI1R45-WUAlEixNLwoqYTOPuzKFjJnry79HbGcaStCe"}
 '''

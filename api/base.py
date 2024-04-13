@@ -37,7 +37,7 @@ class Base(Session):
         self.logger = logger
         level = 'DEBUG' if self.debug else 'INFO'
         self.logger.add(sys.stderr, format=self.log_formatter, level=level)
-        self.hooks = {'response': self.log_respose}
+        self.hooks = {'response': [self.log_respose]}
         self.headers = {
             # 'Accept': '*/*',
             # 'Accept-Encoding': 'gzip, deflate',
