@@ -16,6 +16,7 @@ import json
 import requests
 import jsbeautifier
 import datetime
+import re
 
 class DouyinH5(Base):
 
@@ -69,14 +70,19 @@ class DouyinH5(Base):
         return res
 
     def hook_res(self, response: Response, *args: Tuple, **kwargs: ResponseKw):
-        try:
-            res: douyin.ErrorRes = response.json()
-            if not res.get('status_code') is None and not res.get('status_msg') is None:
-                if res.get('status_code') != 0:
-                    self.logger.error(f'请求错误:{res}')
-        except json.decoder.JSONDecodeError as err:
-            self.logger.debug('无法转为json')
+        contentType = response.headers.get('content-type')
+        if not contentType:
             return
+        
+        if 'json' in contentType:
+            try:
+                res: douyin.ErrorRes = response.json()
+                if not res.get('status_code') is None and not res.get('status_msg') is None:
+                    if res.get('status_code') != 0:
+                        self.logger.error(f'请求错误:{res}')
+            except json.decoder.JSONDecodeError as err:
+                self.logger.debug('无法转为json')
+                return
         
     
     def init(self):
@@ -91,7 +97,7 @@ class DouyinH5(Base):
         # self.logger.debug('当前cookie数量:{}', len(self.context.cookies()))
         # self.logger.debug('网页内容: {}',page.content())
         # context.evaluate('window.byted_acrawler.frontierSign("aa")')
-        # self.get('https://www.douyin.com')
+        
         # self.get('https://sso.douyin.com/get_qrcode/?need_logo=false&need_short_url=false&account_sdk_source=sso&account_sdk_source_info=&biz_trace_id=5a0aa481&aid=6383&language=zh&passport_jssdk_version=3.0.1&device_platform=web_app&msToken=X1mGCvCuuThC08bNQ2qjqpeuAyYcDfTrNTNTcodx5ncfp2MXMYhYfVA_VbxJoI9KTv0LvjiLNZCr3N3VegFzrVcF7U-V4LrKiCQ_39BW7BXayIW2JDkFrq79sIs=',params={
         #     'X-Bogus': self.xBogus
         # })
@@ -122,26 +128,28 @@ class DouyinH5(Base):
         # })
 
         # #   初始化cookie
-        # self.cookies.set('__ac_nonce', self.__ac_nonce, domain='www.douyin.com', path='/')
-        # self.cookies.set('__ac_signature', self.__ac_signature, domain='www.douyin.com', path='/')
+        self.cookies.set('__ac_nonce', '0661a40ef0097fc671295', domain='.douyin.com', path='/')
+        self.cookies.set('__ac_signature', '_02B4Z6wo00f01odwKXQAAIDButkz6ZY-4J6HUC3AAMfS28', domain='.douyin.com', path='/')
         # self.cookies.set('ttwid', self.ttwid, domain='www.douyin.com', path='/')
         # self.cookies.set('IsDouyinActive', 'true', domain='.douyin.com', path='/')
-        # self.cookies.set('home_can_add_dy_2_desktop', '%221%22', domain='.douyin.com', path='/')
-        # self.cookies.set('dy_swidth', str(self.device_info['width']), domain='www.douyin.com', path='/')
-        # self.cookies.set('dy_sheight', str(self.device_info['height']), domain='www.douyin.com', path='/')
-        # feed_params = json.dumps({
-        #     'cookie_enabled': True,
-        #     'screen_width': self.device_info['width'],
-        #     'screen_height': self.device_info['height'],
-        #     'browser_online': True,
-        #     'cpu_core_num': self.device_info['cpu_core_num'],
-        #     'device_memory': self.device_info['device_memory'],
-        #     'downlink': 10,
-        #     'effective_type': self.device_info['effective_type'],
-        #     'round_trip_time': 50
-        # }, separators=(',', ':'))
-        # stream_recommend_feed_params = quote(json.dumps(feed_params, separators=(',', ':')))
-        # self.cookies.set('stream_recommend_feed_params', stream_recommend_feed_params, domain='.douyin.com', path='/')
+        self.cookies.set('home_can_add_dy_2_desktop', '%221%22', domain='.douyin.com', path='/')
+        self.cookies.set('dy_swidth', str(self.device_info['width']), domain='www.douyin.com', path='/')
+        self.cookies.set('dy_sheight', str(self.device_info['height']), domain='www.douyin.com', path='/')
+        feed_params = json.dumps({
+            'cookie_enabled': True,
+            'screen_width': self.device_info['width'],
+            'screen_height': self.device_info['height'],
+            'browser_online': True,
+            'cpu_core_num': self.device_info['cpu_core_num'],
+            'device_memory': self.device_info['device_memory'],
+            'downlink': 10,
+            'effective_type': self.device_info['effective_type'],
+            'round_trip_time': 50
+        }, separators=(',', ':'))
+        stream_recommend_feed_params = quote(json.dumps(feed_params, separators=(',', ':')))
+        self.cookies.set('stream_recommend_feed_params', stream_recommend_feed_params, domain='.douyin.com', path='/')
+        self.cookies.set('device_web_cpu_core', str(self.device_info['cpu_core_num']), domain='.douyin.com', path='/user')
+        self.cookies.set('device_web_memory_size', str(self.device_info['device_memory']), domain='.douyin.com', path='/user')
         # douyinCookies = self.context.cookies()
         # for cookieItem in douyinCookies:
         #     name = cookieItem.get('name')
@@ -150,6 +158,7 @@ class DouyinH5(Base):
         #     path = cookieItem.get('path')
         #     self.cookies.set(name, value, domain=domain, path=path)
         #     self.logger.debug('设置cookie:{} {} {}', name, value, domain)
+        self.get('https://www.douyin.com/')
         pass
     
     @property
@@ -435,20 +444,33 @@ if(process.argv.length > 2){
 
     def otherProfile(self, sec_user_id: str):
         '''用户信息'''
-        params = {
-            **self.defaultParams(6, sec_user_id=sec_user_id),
-        }
+        # params = {
+        #     **self.defaultParams(6, sec_user_id=sec_user_id),
+        # }
 
-        url = 'https://www.douyin.com/aweme/v1/web/user/profile/other/'
-        res = self.get(url, params=params, headers={
+        # url = 'https://www.douyin.com/aweme/v1/web/user/profile/other/'
+        # res = self.get(url, params=params, headers={
+        #     'referer': f'https://www.douyin.com/user/{sec_user_id}',
+        #     'User-Agent': self.userAgent,
+        # })
+
+        # data: douyin.ProfileOtherResType = res.json()
+        res = self.get(f'https://www.douyin.com/user/{sec_user_id}',headers={
             'referer': f'https://www.douyin.com/user/{sec_user_id}',
-            'User-Agent': self.userAgent,
-            # 'cookie':'ttwid=1%7CL2R4AcseQJgu0aUZateAwjHw13oU64Z6V77CdDL2X-Q%7C1711534190%7C4dd04c1852a3d72b8384444530be7aa41200c31696e751a49ba671380227b856'
+            'user-agent': self.userAgent,
         })
-
-        data: douyin.ProfileOtherResType = res.json()
-        
-        return data['user']
+        data = re.findall(r'self\.__pace_f\.push\((.*?)\)',res.text,re.S)
+        try:
+            data = json.loads(data[-1])
+            data = data[1][2:]
+            data = json.loads(data)
+            data = data[-1]
+            userInfo: douyin.HomePageUserInfoType = data['user']['user']
+            
+            return userInfo
+        except Exception as err:
+            self.logger.error(err)
+            return
     
     def videoList(self, sec_user_id: str):
         '''作品列表
@@ -511,7 +533,9 @@ if(process.argv.length > 2){
         #   错误返回
         #   {"status_code":5,"status_msg":"","log_pb":{"impr_id":"202404042053520DD3E00E46C79CCA6D42"}}
         resp: douyin.VideoCommentType = res.json()
-        self.renderType('VideoCommentDetail', resp['comments'][0])
+        # self.renderType('VideoCommentDetail', resp['comments'][0])
+        
+        return resp
     
     def queryUserInfo(self, sec_user_id: str):
         url = 'https://www.douyin.com/aweme/v1/web/im/user/info/'

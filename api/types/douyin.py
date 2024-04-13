@@ -249,3 +249,65 @@ class VideoCommentType(TypedDict):
     general_comment_config: Dict[str, Any]
     show_management_entry_point: int
     folded_comment_count: int
+
+class HomePageUserInfoType(TypedDict):
+    uid: str
+    secUid: str
+    shortId: str
+    realName: str
+    remarkName: str
+    nickname: str
+    desc: str
+    descExtra: List[Any]
+    gender: int
+    avatarUrl: str
+    avatar300Url: str
+    followStatus: int
+    followerStatus: int
+    awemeCount: int
+    followingCount: int
+    followerCount: int
+    mplatformFollowersCount: int
+    favoritingCount: int
+    watchLaterCount: int
+    totalFavorited: int
+    userCollectCount: Dict[str, Any]
+    uniqueId: str
+    customVerify: str
+    generalPermission: Dict[str, Any]
+    punishRemindInfo: str
+    age: int
+    birthday: str
+    country: str
+    province: str
+    city: str
+    district: str
+    school: str
+    schoolVisible: str
+    enterpriseVerifyReason: str
+    secret: int
+    userCanceled: int
+    roomData: Dict[str, Any]
+    shareQrcodeUrl: str
+    shareInfo: Dict[str, Any]
+    coverAndHeadImageInfo: Dict[str, Any]
+    roomId: int
+    isBlocked: int
+    isBlock: int
+    isBan: int
+    favoritePermission: int
+    showFavoriteList: int
+    viewHistoryPermission: int
+    ipLocation: str
+    isNotShowBaseTag: str
+    isGovMediaVip: int
+    isStar: int
+    hideLocation: str
+    needSpecialShowFollowerCount: int
+    isNotShow: int
+    avatarAuditing: str
+    continuationState: int
+    im_role_ids: List[Any]
+    roomIdStr: str
+    isOverFollower: int
+
