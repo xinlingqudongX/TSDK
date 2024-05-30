@@ -1,7 +1,7 @@
 from typing import TypedDict, List, Dict, Any
-from enum import StrEnum, Enum
+from enum import Enum
 
-class QrStatus(StrEnum):
+class QrStatus(Enum):
     已刷新 = 'refused'
     已扫码 = 'scanned'
     已扫码2 = '2'

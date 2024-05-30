@@ -1,5 +1,5 @@
 from typing import TypedDict, Union, List, Dict, Any
-from enum import Enum, EnumType, StrEnum
+from enum import Enum
 
 
 class QrLoginRes(TypedDict):

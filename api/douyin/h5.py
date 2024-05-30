@@ -20,7 +20,7 @@ import re
 
 class DouyinH5(Base):
 
-    webmssdk_url:str = 'https://lf-c-flwb.bytetos.com/obj/rc-client-security/c-webmssdk/1.0.0.20/webmssdk.es5.js'
+    bdms_url:str = 'https://lf-headquarters-speed.yhgfb-cn-static.com/obj/rc-client-security/web/stable/1.0.1.5/bdms.js'
     device_id: str = '7350952832772556339'
     _user_agent: str
     device_info = {
@@ -47,7 +47,7 @@ class DouyinH5(Base):
             'accept-encoding': 'gzip',
             'user-agent': self.userAgent,
         })
-        self.downloadWebmsSdkJs()
+        self.downloadBdmsJs()
 
         self.init()
     
@@ -218,9 +218,9 @@ class DouyinH5(Base):
         return self.__domain_token[urlObj.hostname]['value']
     
     def X_Bogus(self, params: dict):
-        # if isinstance(params, dict):
-        #     strParams = map(lambda item:item if isinstance(item[1], str) else str(item[1]), params.items())
-        #     params = '&'.join(map(lambda item:'='.join(item),strParams))
+        if isinstance(params, dict):
+            strParams = map(lambda item:item if isinstance(item[1], str) else str(item[1]), params.items())
+            params = '&'.join(map(lambda item:'='.join(item),strParams))
         # xBogus = self.context.pages[0].evaluate('(params)=>window.byted_acrawler.frontierSign(params)', params)
         # if not isinstance(xBogus, dict):
         #     self.logger.error('获取X-Bogus失败:', xBogus)
@@ -229,7 +229,15 @@ class DouyinH5(Base):
         # if out:
         #     data = json.loads(out.replace("'",'"'))
         #     return data['X-Bogus']
+
         return ''
+    
+    def a_bogus(self, params: dict | str):
+        if isinstance(params, dict):
+            strParams = map(lambda item:item if isinstance(item[1], str) else str(item[1]), params.items())
+            params = '&'.join(map(lambda item:'='.join(item),strParams))
+        out = self.runCmd(f'node bdms.js "{params}"')
+        return out
     
     def defaultParams(self, insert_index: Union[int,None] = None, **kwargs):
         '''参数很重要，缺少则不会返回数据，并且顺序也重要'''
@@ -285,8 +293,8 @@ class DouyinH5(Base):
             'X-Secsdk-Csrf-Version':'1.2.22',
         }
 
-    def downloadWebmsSdkJs(self,refresh: bool = False):
-        webssdkPath = self.work_dir.joinpath('webmssdk.es5.js')
+    def downloadBdmsJs(self,refresh: bool = False):
+        webssdkPath = self.work_dir.joinpath('bdms.js')
             
         if webssdkPath.exists():
             if refresh:
@@ -294,20 +302,41 @@ class DouyinH5(Base):
             else:
                 return
         
-        res = self.get(self.webmssdk_url)
+        res = self.get(self.bdms_url)
         res.encoding = 'utf-8'
         if res.status_code != 200:
             self.logger.error(res.text)
             return
         
         js = f'''
-window = global;
-window['__ac_referer'] = "{self.userAgent}"
-document = {{}};
-document.addEventListener = function () {{}};
-navigator = {{
-    userAgent:"{self.userAgent}",
-}};
+window = globalThis || {{}};
+window.requestAnimationFrame = function(){{}};
+window.XMLHttpRequest = function(){{}};
+window.navigator = {{
+    userAgent: "{self.userAgent}"
+}}
+window.innerWidth = 2560;
+window.innerHeight = 215;
+window.outerWidth = 1392;
+window.outerHeight = 2560;
+window.screenX = 2560;
+window.screenY = 0;
+window.pageYOffset = 5300;
+
+window.screen = {{
+    availHeight:1392,
+    availLeft: 2560,
+    availTop: 0,
+    availWidth: 2560,
+    colorDepth: 24,
+    height: 1440,
+    isExtended: true,
+    onchange: null,
+    pixelDepth: 24,
+    width: 2560
+}}
+
+window.document = {{}};
 ''' 
         options = jsbeautifier.default_options()
         options.indent_size = 4
@@ -318,11 +347,11 @@ navigator = {{
         with open(webssdkPath, 'w', encoding='utf-8') as f:
             f.write(js)
             f.write(newJs)
-            f.write('''
+            f.write(f'''
 
-if(process.argv.length > 2){
-    console.log(window.byted_acrawler.frontierSign(process.argv[2]));
-}
+if(process.argv.length > 2){{
+    console.log(bdms.init._v[2].p[42]._u.apply(null, [1582, [0, 1, 8, process.argv[2], "", "{self.userAgent}"], 6, bdms.init._v[2].p[42]._v[2], null]));
+}}
 ''')
 
     def checkQr(self, token: str) -> Union[str, None]:
