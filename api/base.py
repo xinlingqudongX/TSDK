@@ -7,8 +7,10 @@ from pathlib import Path
 from subprocess import Popen, PIPE 
 import re
 import random
+import string
 import sys
 import os
+import math
 
 class ResponseKw(TypedDict):
     timeout: Union[int, None]
@@ -103,3 +105,22 @@ class Base(Session):
 
         except TimeoutError as err:
             print(err)
+
+    def toString(self, value: int, idx: int = 36):
+        digits = string.digits + string.ascii_lowercase
+        if value < idx:
+            return digits[value]
+        else:
+            return self.toString(value // idx) + digits[value % idx]
+        # if value == 0:
+        #     return '0'
+        # digits = string.digits + string.ascii_lowercase
+        # result = ""
+        # is_negative = value < 0
+        # value = abs(value)
+        
+        # while value > 0:
+        #     value, remainder = divmod(value, 36)
+        #     result = digits[remainder] + result
+        
+        # return ('-' if is_negative else '') + result

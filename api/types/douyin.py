@@ -1,4 +1,4 @@
-from typing import TypedDict, List, Dict, Any
+from typing import TypedDict, List, Dict, Any, Union, Optional
 from enum import Enum
 
 class QrStatus(Enum):
@@ -7,7 +7,9 @@ class QrStatus(Enum):
     已扫码2 = '2'
     未扫码 = 'new'
     未扫码2 = '1'
-    扫码成功 = '3'
+    登录成功 = '3'
+    取消登录 = '4'
+    刷新扫码 = '5'
 
 class QrcodeData(TypedDict):
     captcha: str
@@ -35,17 +37,47 @@ class QrcodeData2(TypedDict):
     token: str
     web_name: str
 
+class FrontierDevice(TypedDict):
+    access_key: str
+    frontier_device: str
+    method: int
+    product_id: int
+    service_id: int
+
+class QrCheckErrorCode(Enum):
+    Success = 0
+    Error = 2156
+    Verify = 2046
+
+class QrChceckVerifyWays(TypedDict):
+    mobil: str
+    verify_way: str
+    channel_mobile: str
+    sms_content: str
+
 class QrCheckData(TypedDict):
     captcha: str
     desc_url: str
     description: str
-    error_code: int
+    error_code: QrCheckErrorCode
     is_frontier: bool
     qrcode: str
     qrcode_index_url: str
     status: QrStatus
     token: str
     redirect_url: str
+    app_name: str
+    frontier_params: Optional[FrontierDevice]
+
+    biz_params: Any
+    event_params: Any
+    is_optional_verify: bool
+    need_show_verify_tab: bool
+    schema: str
+    url: str
+    verify_scene_desc: str
+    verify_ticket: str
+    verify_ways: Any
 
 class QrCheckRes(TypedDict):
     data: QrCheckData

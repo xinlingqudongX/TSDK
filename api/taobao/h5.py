@@ -2,8 +2,6 @@ from urllib.parse import urlparse, parse_qsl, quote
 from typing import TypedDict, List, Dict, Any
 from collections import OrderedDict
 from pathlib import Path
-from PIL import Image
-from io import BytesIO
 from requests import Response
 from playwright.sync_api import sync_playwright, Page
 from playwright.sync_api import Response as PlayResponse
@@ -17,6 +15,7 @@ import random
 import re
 from ..types import taobao
 from ..base import Base
+import os
 
 
 class RequestOptions(TypedDict):
@@ -182,9 +181,9 @@ class TaobaoH5(Base):
             'data': dataStr
         })
         self.logger.debug('{method}请求:{payload}', payload=payload, method=method.upper())
-        self.headers.update({
-            'Referer': 'https://h5.m.taobao.com'
-        })
+        # self.headers.update({
+        #     'Referer': 'https://h5.m.taobao.com'
+        # })
         res = self.request(**request_options)
         try:
             resj: taobao.ApiRes = res.json()
@@ -226,8 +225,9 @@ class TaobaoH5(Base):
         if imgRes.status_code != 200:
             self.logger.error('获取登录二维码失败:{rtxt}', rtxt=res.text)
             return False
-        img = Image.open(BytesIO(imgRes.content))
-        img.show()
+        with open('qrcode.png','wb') as f:
+            f.write(imgRes.content)
+        os.system('start qrcode.png')
 
         while timeout > 0:
             checkRes = self.qrCheck(lgToken, umidToken)
@@ -254,7 +254,6 @@ class TaobaoH5(Base):
             timeout -= 1
             time.sleep(1)
         
-        img.close()
         return False
     
     def qrCheck(self, lgToken: str, umidToken: str):
@@ -508,3 +507,128 @@ class {typeName}(TypedDict):
             request_options.setdefault('data', params)
 
         return self._execute(request_options)
+    
+    def getShop(self, sellerId: str, shopId: str):
+        shop = ShopH5(sellerId, shopId)
+        shop.cookies = self.cookies
+        shop.initShop()
+
+        return shop
+
+
+class ShopH5(TaobaoH5):
+
+    shopInfo: taobao.ShopInfo
+    shopImpression: taobao.ShopImpression
+
+    def __init__(self, sellerId: str, shopId: str) -> None:
+        super().__init__()
+
+        self.gongshangUrl = 'https://zhaoshang.tmall.com/maintaininfo/liangzhao.htm?_tb_token_=ea43bb3e1f775&xid=7cbdc4a55de6bd9367aec3bdd88298e7&checkCode=dbpr'
+        self.shopInfo = {
+            "sellerId": sellerId,
+            "shopId": shopId,
+            "shopLogo": "",
+            "shopName": '',
+            "tmall": taobao.BoolStr.false,
+        }
+
+        self.shopImpression = {
+            'bizLogoPicList': [],
+            'aptitude':'',
+            'changeSubscribe2Follow': taobao.BoolStr.true,
+            'city':'',
+            'fansNum':'',
+            'goldenSeller': taobao.BoolStr.true,
+            'licenseUrl':'',
+            'nick':'',
+            'ownerChanged': taobao.BoolStr.true,
+            'personalManager': taobao.BoolStr.true,
+            'sellerId':'',
+            'starts':'',
+            'tmall': taobao.BoolStr.false,
+            'xid':'',
+        }
+
+    def initShop(self):
+        sellerId = self.shopInfo.get('sellerId')
+        shopId = self.shopInfo.get('shopId')
+
+        self.MtopTaobaoShopImpressionIntroGet({'sellerId': sellerId, 'shopId': shopId})
+        self.MtopTaobaoShopImpressionLogoGet({'sellerId': sellerId, 'shopId': shopId})
+
+    def tt(self):
+        res = self.get('https://zhaoshang.tmall.com/maintaininfo/liangzhao.htm?_tb_token_=ea43bb3e1f775&xid=7cbdc4a55de6bd9367aec3bdd88298e7&checkCode=dbpr', params={
+
+        })
+    
+    def searchGoods(self, goodsName: str):
+        '''搜索商品'''
+        pass
+
+    def MtopTaobaoShopImpressionIntroGet(self, data: Any = {}):
+        """mtop.taobao.shop.impression.intro.get函数"""
+
+        method = 'get'
+        params = {'jsv': '2.6.1', 'appKey': '12574478', 't': '1702987766953', 'sign': '206ee688cc2fea46ff035bccb349579b', 'api': 'mtop.taobao.shop.impression.intro.get', 'v': '1.0', 'type': 'jsonp', 'secType': '1', 'preventFallback': 'true', 'dataType': 'jsonp', 'callback': 'mtopjsonp6', 'data': {'sellerId': '499878111', 'shopId': '62643782'}}
+        url = 'https://h5api.m.taobao.com/h5/mtop.taobao.shop.impression.intro.get/1.0/'
+        if data:
+            params['data'].update(data)
+
+        sellerId = params.get('data',{}).get('sellerId')
+        shopId = params.get('data', {}).get('shopId')
+
+        request_options = OrderedDict()
+        request_options.setdefault('method', method)
+        request_options.setdefault('url', url)
+        if method.upper() == 'GET':
+            request_options.setdefault('params', params)
+        else:
+            request_options.setdefault('data', params)
+
+        request_options.setdefault('headers', {
+            **self.headers,
+            'Referer': f'https://tbshop.m.taobao.com/app/tb-haodian/h5-pages/impression?sellerId={sellerId}&shopId={shopId}',
+        })
+        result, res = self._execute(request_options)
+        introInfo: taobao.ShopImpression = result.get('data', {}).get('result', {})
+        if introInfo:
+            self.shopImpression['aptitude'] = introInfo.get('aptitude')
+            self.shopImpression['sellerId'] = introInfo.get('sellerId')
+            self.shopImpression['tmall'] = introInfo.get('tmall')
+            self.shopImpression['starts'] = introInfo.get('starts')
+            self.shopImpression['xid'] = introInfo.get('xid')
+            self.shopImpression['nick'] = introInfo.get('nick')
+            self.shopImpression['city'] = introInfo.get('city')
+            self.shopImpression['licenseUrl'] = introInfo.get('licenseUrl')
+            self.shopImpression['personalManager'] = introInfo.get('personalManager')
+            self.shopImpression['ownerChanged'] = introInfo.get('ownerChanged')
+
+        self.logger.debug(res)
+        return result
+
+    def MtopTaobaoShopImpressionLogoGet(self, data: Any = {}):
+        """mtop.taobao.shop.impression.logo.get函数"""
+
+        method = 'get'
+        params = {'jsv': '2.6.1', 'appKey': '12574478', 't': '1702987766953', 'sign': '206ee688cc2fea46ff035bccb349579b', 'api': 'mtop.taobao.shop.impression.logo.get', 'v': '1.0', 'type': 'jsonp', 'secType': '1', 'preventFallback': 'true', 'dataType': 'jsonp', 'callback': 'mtopjsonp5', 'data': {'sellerId': '499878111', 'shopId': '62643782'}}
+        url = 'https://h5api.m.taobao.com/h5/mtop.taobao.shop.impression.logo.get/1.0/'
+        if data:
+            params['data'].update(data)
+
+        sellerId = params.get('data',{}).get('sellerId')
+        shopId = params.get('data', {}).get('shopId')
+        request_options = OrderedDict()
+        request_options.setdefault('method', method)
+        request_options.setdefault('url', url)
+        if method.upper() == 'GET':
+            request_options.setdefault('params', params)
+        else:
+            request_options.setdefault('data', params)
+
+        request_options.setdefault('headers', {
+            **self.headers,
+            'Referer': f'https://tbshop.m.taobao.com/app/tb-haodian/h5-pages/impression?sellerId={sellerId}&shopId={shopId}',
+        })
+        result, res = self._execute(request_options)
+        return result

@@ -45,3 +45,30 @@ class OpenApiErrorMsg(TypedDict):
     request_id: str
 class OpenApiRes(TypedDict):
     error_response: OpenApiErrorMsg
+
+class BoolStr(Enum):
+    true = "true"
+    false = "false"
+
+class ShopInfo(TypedDict):
+    tmall: BoolStr
+    sellerId: str
+    shopId: str
+    shopLogo: str
+    shopName: str
+
+class ShopImpression(TypedDict):
+    bizLogoPicList: List[str]
+    fansNum: str
+    goldenSeller: BoolStr
+    aptitude: str
+    changeSubscribe2Follow: BoolStr
+    city: str
+    licenseUrl: str
+    nick: str
+    ownerChanged: BoolStr
+    personalManager: BoolStr
+    sellerId: str
+    starts: str
+    tmall: BoolStr
+    xid: str
