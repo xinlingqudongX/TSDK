@@ -52,3 +52,5 @@ Pipfile
 
 # dotenv
 .env
+dist/
+TSDK.egg-info/

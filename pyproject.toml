@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "TSDK"
+version = "0.1.0"
+description = "taobao login"
+license = "MIT"
+authors = ["xinlingqudongX"]
+maintainers = []
+readme = "README.md"
+homepage = "https://github.com/xinlingqudongX/TSDK"
+repository = "https://github.com/xinlingqudongX/TSDK"
+documentation = "https://github.com/xinlingqudongX/TSDK"
+keywords = ["login", "taobao", "qrcode"]
+include = ["changelog.md"]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+pendulum = "^3.0.0"
+requests = "^2.32.3"
+pillow = "^10.4.0"
+playwright = "^1.45.1"
+loguru = "^0.7.2"
+
+[tool.poetry.scripts]
+my_package_cli = 'my_package.console:run'
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
