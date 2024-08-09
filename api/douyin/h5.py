@@ -13,7 +13,7 @@ from playwright.sync_api import (
 )
 from playwright.sync_api import Response as PlayResponse
 from playwright.sync_api import Request as PlayRequest
-from urllib.parse import quote_plus, quote, parse_qsl, parse_qs, urlunparse, urlparse
+from urllib.parse import quote_plus, quote, parse_qsl, urlunparse, urlparse
 from requests import Response
 import time
 import base64
@@ -88,6 +88,7 @@ class DouyinH5(Base):
         msToken = response.headers.get('X-Ms-Token')
         if msToken:
             self.logger.debug(f'返回token:{msToken}')
+            self.cookies.set('msToken', msToken, domain=".douyin.com", path="/")
         contentType = response.headers.get("content-type")
         if not contentType:
             return
@@ -969,9 +970,13 @@ if(process.argv.length > 2){{
     def hotSearchList(self):
         url = "https://www.douyin.com/aweme/v1/web/hot/search/list/?device_platform=webapp&aid=6383&channel=channel_pc_web&detail_list=1&source=6&main_billboard_count=5&pc_client_type=1&version_code=290100&version_name=29.1.0&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=zh-CN&browser_platform=Win32&browser_name=Chrome&browser_version=123.0.0.0&browser_online=true&engine_name=Blink&engine_version=123.0.0.0&os_name=Windows&os_version=10&cpu_core_num=16&device_memory=8&platform=PC&downlink=10&effective_type=4g&round_trip_time=0&webid=7353624324970219043"
 
-    def search(self, keyword: str, offset: int = 0, count: int = 12):
+    def webDiscoverSearch(self, keyword: str, offset: int = 0, count: int = 12):
+        '''网络发现搜索
+        无法使用'''
         url = "https://www.douyin.com/aweme/v1/web/discover/search/"
+
         params = {
+            'search_filter_value': '{"douyin_user_fans":["100w_"]}',
             "search_channel": "aweme_user_web",
             "keyword": keyword,
             "search_source": "normal_search",
@@ -980,11 +985,55 @@ if(process.argv.length > 2){{
             "offset": offset,
             "count": count,
             "need_filter_settings": 1,
+            'webid': self.webid,
+            'msToken': self.msToken,
         }
+
+        params.update({
+            'a_bogus': self.a_bogus(params)
+        })
 
         res = self.get(url, params=params)
 
         resp = res.json()
+        return resp
+    
+    def generalSearchSingle(self, keyword: str):
+        '''通用搜索单个
+        无法搜索'''
+        url = 'https://www.douyin.com/aweme/v1/web/general/search/single/'
+        pstr = parse_qsl('device_platform=webapp&aid=6383&channel=channel_pc_web&search_channel=aweme_general&enable_history=1&keyword=%E7%9B%B8%E4%BA%B2%E5%8A%A0%E4%BA%86%E5%BE%AE%E4%BF%A1%E6%80%8E%E4%B9%88%E8%81%8A&search_source=search_sug&query_correct_type=1&is_filter_search=0&from_group_id=&offset=0&count=15&need_filter_settings=1&list_type=single&update_version_code=170400&pc_client_type=1&version_code=190600&version_name=19.6.0&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=zh-CN&browser_platform=Win32&browser_name=Chrome&browser_version=126.0.0.0&browser_online=true&engine_name=Blink&engine_version=126.0.0.0&os_name=Windows&os_version=10&cpu_core_num=16&device_memory=8&platform=PC&downlink=10&effective_type=4g&round_trip_time=50')
+        params = {
+            **dict(pstr),
+            # 'device_platform': 'webapp',
+            # 'aid': 6383,
+            # 'channel': 'channel_pc_web',
+            # 'search_channel': 'aweme_general',
+            # 'enable_history': 1,
+            # 'keyword': keyword,
+            # 'search_source': 'pc_click_hashtag_search',
+            # 'query_correct_type': 1,
+            # 'is_filter_search': 0,
+            # 'from_group_id': '',
+            # 'offset': 0,
+            # 'count': 15,
+            # 'need_filter_settings': 1,
+            # 'list_type': 'single',
+            # 'update_version_code': 170400,
+            # 'pc_client_type': 1,
+            # 'version_code': 190600,
+            # 'version_name': '19.6.0',
+            'webid': self.webid,
+            'msToken': self.msToken,
+        }
+
+        params.update({
+            'a_bogus': self.a_bogus(params)
+        })
+
+        res = self.get(url, params=params)
+        return res.text
+
 
     def report(self):
         res = self.post(
