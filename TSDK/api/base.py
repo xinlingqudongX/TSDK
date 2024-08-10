@@ -35,7 +35,7 @@ class Base(Session):
     def __init__(self) -> None:
         super().__init__()
 
-        self.work_dir = Path(os.getcwd())
+        self.work_dir = Path(os.path.dirname(os.path.realpath(__file__))).parent
         self.logger = logger
         level = 'DEBUG' if self.debug else 'INFO'
         self.logger.add(sys.stderr, format=self.log_formatter, level=level)
