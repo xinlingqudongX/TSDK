@@ -15,6 +15,7 @@ from playwright.sync_api import Response as PlayResponse
 from playwright.sync_api import Request as PlayRequest
 from urllib.parse import quote_plus, quote, parse_qsl, urlunparse, urlparse
 from requests import Response
+from requests.exceptions import JSONDecodeError
 import time
 import base64
 import os
@@ -771,10 +772,6 @@ if(process.argv.length > 2){{
                     "union": True,
                 },
             )
-            # res = self.get('https://www.douyin.com/user/MS4wLjABAAAA0joAdG_sxN6RJAXJBsXdzh1NzoVNYVgmhGYjooGY9t4',headers={
-            #     'Referer': 'https://www.douyin.com/user/MS4wLjABAAAA0joAdG_sxN6RJAXJBsXdzh1NzoVNYVgmhGYjooGY9t4',
-            # })
-            # res = self.get('https://www.douyin.com/discover?modal_id=7352081640375553299')
             self.logger.debug(res.request.headers)
 
         ttwidStr = self.cookies.get("ttwid")
@@ -853,7 +850,10 @@ if(process.argv.length > 2){{
             headers={"referer": f"https://www.douyin.com/user/{sec_user_id}"},
         )
 
-        resj: douyin.AwemePostResType = res.json()
+        try:
+            resj: douyin.AwemePostResType = res.json()
+        except JSONDecodeError as err:
+            return None
 
         return resj
 
@@ -945,8 +945,12 @@ if(process.argv.length > 2){{
         # print(res.request.headers)
         #   错误返回
         #   {"status_code":5,"status_msg":"","log_pb":{"impr_id":"202404042053520DD3E00E46C79CCA6D42"}}
-        resp: douyin.VideoCommentType = res.json()
+        
         # self.renderType('UserMini', resp['comments'][0]['user'])
+        try:
+            resp: douyin.VideoCommentType = res.json()
+        except JSONDecodeError as err:
+            return None
 
         return resp
 
