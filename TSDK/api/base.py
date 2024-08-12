@@ -94,6 +94,8 @@ class Base(Session):
             return 'List[Any]'
         elif isinstance(data, dict):
             return 'Dict[str, Any]'
+        elif data is None:
+            return 'None'
         return 'str'
     
     def runCmd(self, command: str):

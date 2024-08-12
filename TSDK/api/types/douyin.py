@@ -443,7 +443,7 @@ class VideoCommentDetailType(TypedDict):
 
 class VideoCommentType(TypedDict):
     status_code: int
-    comments: List[VideoCommentDetailType]
+    comments: Optional[List[VideoCommentDetailType]]
     cursor: int
     has_more: int
     reply_style: int
@@ -641,11 +641,61 @@ class AwemeVideoType(TypedDict):
     misc_download_addrs: str
     video_model: str
 
+class AwemePostDetailAuthorType(TypedDict):
+    uid: str
+    ban_user_functions: None
+    nickname: str
+    cf_list: str
+    link_item_list: str
+    avatar_thumb: Dict[str, Any]
+    avatar_schema_list: str
+    signature_extra: str
+    follow_status: int
+    risk_notice_text: str
+    private_relation_list: str
+    follower_list_secondary_information_struct: str
+    custom_verify: str
+    can_set_geofencing: str
+    batch_unfollow_contain_tabs: str
+    display_info: str
+    verification_permission_ids: str
+    need_points: str
+    share_info: Dict[str, Any]
+    familiar_visitor_user: str
+    homepage_bottom_toast: str
+    batch_unfollow_relation_desc: str
+    enterprise_verify_reason: str
+    is_ad_fake: int
+    account_cert_info: str
+    interest_tags: str
+    user_tags: str
+    profile_mob_params: str
+    card_entries_not_display: str
+    not_seen_item_id_list: str
+    card_entries: str
+    prevent_download: int
+    text_extra: str
+    sec_uid: str
+    im_role_ids: str
+    follower_status: int
+    not_seen_item_id_list_v2: str
+    contrail_list: str
+    data_label_list: str
+    cover_url: List[Any]
+    user_permissions: str
+    offline_info_list: str
+    endorsement_info_list: str
+    card_sort_priority: str
+    personal_tag_list: str
+    white_cover_url: str
+    creator_tag_list: str
+    special_people_labels: str
+
 class AwemePostDetailType(TypedDict):
     aweme_id: str
     desc: str
     create_time: int
-    author: Dict[str, Any]
+    author: AwemePostDetailAuthorType
     music: AwemeMusicType
     trends_infos: str
     video: AwemeVideoType
@@ -771,7 +821,6 @@ class AwemePostResType(TypedDict):
     request_item_cursor: int
     post_serial: int
     replace_series_cover: int
-
 
 
 
