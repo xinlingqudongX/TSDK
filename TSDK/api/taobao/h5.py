@@ -6,16 +6,17 @@ from requests import Response
 from playwright.sync_api import sync_playwright, Page
 from playwright.sync_api import Response as PlayResponse
 from playwright.sync_api import Request as PlayRequest
+from json import JSONDecodeError
+from ..types import taobao
+from ..base import Base
 import hashlib
 import datetime
 import json
-from json import JSONDecodeError
 import time
 import random
 import re
-from ..types import taobao
-from ..base import Base
 import os
+import qrcode
 
 
 class RequestOptions(TypedDict):
@@ -48,6 +49,8 @@ class TaobaoH5(Base):
         'x5sec',
     ]
     createTypesFile: bool = False
+    _login_csrf: str = ''
+    _login_umidtoken: str = ''
     
     fail_ret_status = {
         'FAIL_SYS_USER_VALIDATE': ''
@@ -55,6 +58,7 @@ class TaobaoH5(Base):
 
     def __init__(self) -> None:
         super().__init__()
+        self.verify = False
         self.login_url = 'https://login.m.taobao.com/mlogin/login.htm'
         
         self.func_template = '''
@@ -137,10 +141,15 @@ class TaobaoH5(Base):
     @property
     def umidToken(self):
         '''获取umidToken'''
-        return 'C' + str(int(time.time() * 1000)) + \
-            ''.join(str(random.choice(range(10))) for _ in range(11)) + \
-            str(int(time.time() * 1000)) +  \
-            ''.join(str(random.choice(range(10))) for _ in range(3))
+        return self._login_umidtoken
+        # return 'C' + str(int(time.time() * 1000)) + \
+        #     ''.join(str(random.choice(range(10))) for _ in range(11)) + \
+        #     str(int(time.time() * 1000)) +  \
+        #     ''.join(str(random.choice(range(10))) for _ in range(3))
+    
+    @property
+    def loginCsrfToken(self):
+        return self._login_csrf
 
     def sign(self, token: str, t: str, appkey: str, data: str, binary: bool = False):
         '''sign签名加密方式采用淘宝H5网页的加密流程
@@ -213,40 +222,84 @@ class TaobaoH5(Base):
     def qrLogin(self, timeout: int = 60) -> bool:
         '''二维码登录'''
         umidToken = self.umidToken
-        res = self.get(f'https://login.taobao.com/member/login.jhtml?spm=a21bo.jianhua.754894437.1.5af92a89ix8uWh&f=top&redirectURL={quote(self.domain)}')
+        res = self.get(f'https://login.taobao.com/member/login.jhtml?style=mini&newMini2=true&from=sm&full_redirect=false&redirectURL={quote(self.domain)}')
         if res.status_code != 200:
             self.logger.error('初始化cooie失败，请检查原因:',res.text)
             return False
-        res = self.get(f'https://qrlogin.taobao.com/qrcodelogin/generateQRCode4Login.do?adUrl=&adImage=&adText=&viewFd4PC=&viewFd4Mobile=&from=tb&appkey=00000000&umid_token={umidToken}')
+        # 提取csrf
+        regex = re.findall(r'viewData = (\{.*\})',res.text)
+        if len(regex) <= 0:
+            self.logger.error('提取csrf失败')
+        viewData: taobao.LoginViewData = json.loads(regex[0])
+        loginForm = viewData.get('loginFormData')
+        self._login_csrf = loginForm.get('_csrf_token')
+        self._login_umidtoken = loginForm.get('umidToken')
+
+        res = self.get('https://login.taobao.com/newlogin/qrcode/generate.do', params={
+            'appName':'taobao',
+            'fromSite':'0',
+            'appName':'taobao',
+            'appEntrance':'taobao_pc',
+            '_csrf_token': self.loginCsrfToken,
+            'umidToken': self.umidToken,
+            'hsiz': self.hsiz,
+            'bizParams':'taobaoBizLoginFrom=taobao-home',
+            'full_redirect': False,
+            'mainPage': False,
+            'style': 'mini',
+            'appkey':'00000000',
+            'from':'sm',
+            'isMobile': False,
+            'lang': 'zh_CN',
+            'returnUrl': self.domain,
+            'umidTag': 'SERVER',
+            # 'bx-ua':'',
+            # 'bx-umidtoken':'',
+            # 'bx_et':'',
+        })
         resj: taobao.QrLoginRes = res.json()
-        lgToken = resj.get('lgToken')
-        qrcodeUrl = resj.get('url')
-        imgRes = self.get(f'https:{qrcodeUrl}')
-        if imgRes.status_code != 200:
-            self.logger.error('获取登录二维码失败:{rtxt}', rtxt=res.text)
-            return False
+        t = resj.get('content').get('data').get('t')
+        ck = resj.get('content').get('data').get('ck')
+        qrUrl = resj.get('content').get('data').get('codeContent')
+        # qrcode url:https://login.m.taobao.com/qrcodeCheck.htm?lgToken=c21f2d0128b033123fad100d609c51d4&tbScanOpenType=Notification
+        qrcodeImg = qrcode.make(qrUrl)
         with open('qrcode.png','wb') as f:
-            f.write(imgRes.content)
+            qrcodeImg.save(f)
+
+        # if imgRes.status_code != 200:
+        #     self.logger.error('获取登录二维码失败:{rtxt}', rtxt=res.text)
+        #     return False
         os.system('start qrcode.png')
 
         while timeout > 0:
-            checkRes = self.qrCheck(lgToken, umidToken)
-            checkCode = checkRes.get('code')
-            if checkCode == taobao.QrStateCode.扫码成功.value:
-                checkUrl = checkRes.get('url') + '&umid_token=' + umidToken
-                mainRes = self.get(checkUrl)
-                if mainRes.url.find('login_unusual.htm') > -1:
-                    [judgeTrueHref,judgeFalseHref, safeHref, nosafeHref] = re.findall(r'window\.location\.href = "(.*?)"',mainRes.text)
-                    safeRes = self.get(safeHref)
-                    self.logger.debug('安全登录跳转返回:{tt}', tt=safeRes.text)
+            checkData = self.qrNewCheck(t, ck)
+            qrCodeStatus = checkData.get('qrCodeStatus')
+            if qrCodeStatus == taobao.QrStatus.已确认.value:
+                self.logger.debug(f'已确认:{checkData}')
+                imgUrls = checkData.get('asyncUrls')
+                if imgUrls:
+                    for url in imgUrls:
+                        self.get(url)
 
-                    data, res = self.getUserSimple()
-                    if not data.get('data'):
-                        self.logger.error('需要安全验证登录:{rtext}', rtext=mainRes.text)
-                        break
+                mainUrl = checkData.get('iframeRedirectUrl')
+                if mainUrl:
+                    self.get(mainUrl)
+                #   获取h5token
+                self.getUserSimple()
+                # checkUrl = checkRes.get('url') + '&umid_token=' + umidToken
+                # mainRes = self.get(checkUrl)
+                # if mainRes.url.find('login_unusual.htm') > -1:
+                #     [judgeTrueHref,judgeFalseHref, safeHref, nosafeHref] = re.findall(r'window\.location\.href = "(.*?)"',mainRes.text)
+                #     safeRes = self.get(safeHref)
+                #     self.logger.debug('安全登录跳转返回:{tt}', tt=safeRes.text)
+
+                #     data, res = self.getUserSimple()
+                #     if not data.get('data'):
+                #         self.logger.error('需要安全验证登录:{rtext}', rtext=mainRes.text)
+                #         break
                 return True
-            elif checkCode == taobao.QrStateCode.二维码过期.value:
-                self.logger.debug('二维码过期: {res}', res=checkRes)
+            elif qrCodeStatus == taobao.QrStatus.已过期.value:
+                self.logger.debug('二维码过期: {res}', res=checkData)
                 break
             else:
                 pass
@@ -265,33 +318,38 @@ class TaobaoH5(Base):
         self.logger.debug('检查qrcode登录状态:{resj}', resj=resj)
         return resj
 
-    # def qrLogin2(self):
-    #     res = self.get('https://login.taobao.com/newlogin/qrcode/generate.do', params={
-    #         'appName': 'taobao',
-    #         'fromSite': 0,
-    #         'sub': True,
-    #         'allp': 'assets_css=3.0.10/login_pc.css',
-    #         'appEntrance': 'tmall',
-    #         '_csrf_token':'',
-    #         'umidToken': '',
-    #         'hsiz':'',
-    #         'newMini2': True,
-    #         'bizParams':'',
-    #         'full_redirect': True,
-    #         'style':'miniall',
-    #         'appkey':'00000000',
-    #         'from':'tmall',
-    #         'isMobile': False,
-    #         'lang':'zh_CN',
-    #         'returnUrl':'',
-    #         'umidTag':'SERVER',
-    #     })
-    #     resj = res.json()
-    #     hasError = resj.get('hasError')
-    #     if hasError:
-    #         self.logger.error('请求错误:{resj}', resj=resj)
-    #     resData:taobao.QrStateRes2Data = resj.get('content',{}).get('data')
-    #     return resData
+    def qrNewCheck(self, t: int, ck: str, ):
+        res = self.post('https://login.taobao.com/newlogin/qrcode/query.do?appName=taobao&fromSite=0', data={
+            't': t,
+            'ck': ck,
+            'appName': 'taobao',
+            'appEntrance': 'taobao_pc',
+            '_csrf_token': self.loginCsrfToken,
+            'umidToken': self.umidToken,
+            'hsiz': self.hsiz,
+            'newMini2': True,
+            'bizParams':'',
+            'full_redirect': False,
+            'mainPage': False,
+            'style': 'mini',
+            'appkey': '00000000',
+            'from':'sm',
+            'isMobile': False,
+            'umidTag': 'SERVER',
+            'navUserAgent':'',
+            'navPlatform': 'Win32',
+            'isIframe': False,
+            'defaultView':'qrcode',
+            'deviceId': '',
+            'pageTraceId':'',
+        })
+        resj = res.json()
+        hasError = resj.get('hasError')
+        if hasError:
+            self.logger.error('请求错误:{resj}', resj=resj)
+        self.logger.debug(f'检查返回:{resj}')
+        resData:taobao.QrCheckData = resj.get('content',{}).get('data')
+        return resData
 
     def __hookX5(self, res: Response, jumpUrl: str = ''):
         ufeResult = res.headers.get('ufe-result')
@@ -456,20 +514,21 @@ class {typeName}(TypedDict):
             if type(val) is str:
                 fieldStr += f'    {key}: str\n'
             elif type(val) is list:
-                fieldStr += f'    {key}: List'
+                fieldStr += f'    {key}: List\n'
             elif type(val) is dict:
-                fieldStr += f'    {key}: Dict'
+                fieldStr += f'    {key}: Dict\n'
             elif type(val) is int:
-                fieldStr += f'    {key}: int'
+                fieldStr += f'    {key}: int\n'
             elif type(val) is float:
-                fieldStr += f'    {key}: float'
+                fieldStr += f'    {key}: float\n'
             elif type(val) is bool:
-                fieldStr += f'    {key}: bool'
+                fieldStr += f'    {key}: bool\n'
             else:
-                fieldStr += f'    {key}: Any'
+                fieldStr += f'    {key}: Any\n'
         
         nowFile = Path(__file__)
         typeFile = nowFile.parent.parent.joinpath('types/taobao.py')
+        self.logger.debug(f'写入类型:{typeFile}')
         with open(typeFile, 'a+', encoding='utf-8') as f:
             typeStr = formatter.format(**{
                 'typeName': typeName,
