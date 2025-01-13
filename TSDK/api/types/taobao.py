@@ -1,6 +1,7 @@
-from typing import TypedDict, Union, List, Dict, Any, Optional
+from typing import Generic, TypedDict, Union, List, Dict, Any, Optional, TypeVar
 from enum import Enum
 
+T = TypeVar('T')
 
 class QrGenerateData(TypedDict):
     t: int
@@ -9,13 +10,13 @@ class QrGenerateData(TypedDict):
     resultCode: int
     processFinished: bool
 
-class QrGenerateContent(TypedDict):
-    data: QrGenerateData
+class QrGenerateContent(Generic[T], TypedDict):
+    data: T
     status: int
     success: bool
 
 class QrLoginRes(TypedDict):
-    content: QrGenerateContent
+    content: QrGenerateContent[QrGenerateData]
     hasError: bool
 
 class QrStateRes(TypedDict):
@@ -24,6 +25,27 @@ class QrStateRes(TypedDict):
     code: str
     url: str
 
+class SendSmsData(TypedDict):
+    emailToken: str
+    resultCode: int
+    smsToken: str
+
+class LoginSmsData(TypedDict):
+    resultCode: int
+    titleMsg: Optional[str]
+    redirect: Optional[bool]
+    loginResult: Optional[str]
+    loginSucResultAction: Optional[str]
+    redirectUrl: Optional[str]
+    loginType: Optional[str]
+    returnUrl: Optional[str]
+
+class LoginRes(Generic[T], TypedDict):
+    content: QrGenerateContent[T]
+    hasError: bool
+
+SendSmsRes = LoginRes[SendSmsData]
+LoginSmsRes = LoginRes[LoginSmsData]
 # {
 # 	"content": {
 # 		"data": {
@@ -77,6 +99,9 @@ class QrStateCode(Enum):
     二维码过期 = '10004'
     跳过 = '10000'
 
+class RecommendRes(TypedDict):
+    content: Any
+    hasError: bool
 class ApiRes(TypedDict):
     api: str
     v: str

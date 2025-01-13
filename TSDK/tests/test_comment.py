@@ -32,3 +32,18 @@ def test_check_login():
 
     data = client.getUserSimple()
     print(data)
+
+def test_sms_login():
+    '''测试短信登录'''
+    client = TaobaoH5()
+    client.debug = True
+    client.verify = False
+
+    login = client.sendSms('phone')
+    print(login)
+    smscode = ''
+    result = client.loginSms('phone',smscode, login.get('smsToken'))
+    print(result)
+
+    data = client.getUserSimple()
+    print(data)

@@ -218,10 +218,7 @@ class TaobaoH5(Base):
         except Exception as err:
             self.logger.error('请求错误：{err}', err=err)
             return {}, res
-
-    def qrLogin(self, timeout: int = 60) -> bool:
-        '''二维码登录'''
-        umidToken = self.umidToken
+    def _login_bofore(self):
         res = self.get(f'https://login.taobao.com/member/login.jhtml?style=mini&newMini2=true&from=sm&full_redirect=false&redirectURL={quote(self.domain)}')
         if res.status_code != 200:
             self.logger.error('初始化cooie失败，请检查原因:',res.text)
@@ -234,6 +231,11 @@ class TaobaoH5(Base):
         loginForm = viewData.get('loginFormData')
         self._login_csrf = loginForm.get('_csrf_token')
         self._login_umidtoken = loginForm.get('umidToken')
+
+    def qrLogin(self, timeout: int = 60) -> bool:
+        '''二维码登录'''
+        umidToken = self.umidToken
+        self._login_bofore()
 
         res = self.get('https://login.taobao.com/newlogin/qrcode/generate.do', params={
             'appName':'taobao',
@@ -350,6 +352,58 @@ class TaobaoH5(Base):
         self.logger.debug(f'检查返回:{resj}')
         resData:taobao.QrCheckData = resj.get('content',{}).get('data')
         return resData
+
+    def sendSms(self, phone:str, country:str = 'CN', code = '86'):
+        '''登录短信验证码发送'''
+        self._login_bofore()
+
+        res = self.post('https://login.m.taobao.com/havanaone/loginLegacy/recommendLoginFlow.do?bizEntrance=taobao_h5&bizName=taobao',data={
+            'simBizType': 0,
+            'loginId': phone,
+            'phoneCode': code,
+            'countryCode': country,
+            'keepLogin': True,
+            'contextToken':'',
+            'defaultView': 'sim'
+        })
+
+        # 发送验证码
+        res = self.post('https://login.m.taobao.com/havanaone/loginLegacy/sms/sendSms.do?bizEntrance=taobao_h5&bizName=taobao', data={
+            'phoneCode': code,
+            'loginId': phone,
+            'countryCode': country,
+            'contextToken':'',
+            'defaultView': 'sim',
+            '_csrf': self._login_csrf,
+            'lang': 'zh_CN'
+        })
+        resj: taobao.SendSmsRes = res.json()
+        smsData = resj.get('content').get('data')
+
+        return smsData
+        #   
+
+    def loginSms(self,phone:str,smsCode:str, smsToken: str, country:str = 'CN', code = '86'):
+        '''短信验证码登录'''
+        res = self.post('https://login.m.taobao.com/havanaone/loginLegacy/sms/login.do?bizEntrance=taobao_h5&bizName=taobao', data={
+            'loginId': phone,
+            'phoneCode': code,
+            'countryCode': country,
+            'keepLogin': True,
+            'contextToken':'',
+            'smsCode': smsCode,
+            'smsToken': smsToken
+        })
+
+        resj: taobao.LoginSmsRes = res.json()
+
+        smsData = resj.get('content').get('data')
+        redirectUrl = smsData.get('redirectUrl')
+        if redirectUrl:
+            self.get(redirectUrl)
+        self.getUserSimple()
+        
+        return resj
 
     def __hookX5(self, res: Response, jumpUrl: str = ''):
         ufeResult = res.headers.get('ufe-result')
