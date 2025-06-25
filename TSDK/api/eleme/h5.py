@@ -68,13 +68,20 @@ class ElemeH5(Base):
             ''.join(str(random.choice(range(10))) for _ in range(3))
 
     def sign(self, token: str, t: str, appkey: str, data: str, binary: bool = False):
-        '''sign签名加密方式采用淘宝H5网页的加密流程
-        data传递使用的是字符串，一是为了少加密一次，二是为了直接说明这个要转成json字符串，还需要去掉空格'''
-
-        sign_func = 'digest' if binary else 'hexdigest'
+        """通过execjs执行test.js中的test函数生成签名"""
+        try:
+            import execjs
+        except ImportError:
+            raise ImportError("请先安装 execjs: pip install PyExecJS")
+        import os
+        js_path = os.path.join(os.path.dirname(__file__), './script.js')
+        js_path = os.path.abspath(js_path)
+        with open(js_path, 'r', encoding='utf-8') as f:
+            js_code = f.read()
+        ctx = execjs.compile(js_code)
         sign_str = f'{token}&{t}&{appkey}&{data}'
-        self.logger.debug('sign签名字符串:{signStr}',signStr=sign_str)
-        return getattr(hashlib.md5(sign_str.encode('utf-8')),sign_func)()
+        self.logger.debug('sign签名字符串:{signStr}', signStr=sign_str)
+        return ctx.call('sign', sign_str)
 
     def _execute(self, request_options: Any):
         '''解析请求参数并将参数进行加密'''
@@ -122,7 +129,7 @@ class ElemeH5(Base):
         urlObj = urlparse(api)
         
         queryParams = dict(parse_qsl(urlObj.query))
-        [platform, service_name, version, SV] = urlObj.path.strip('/').split('/')
+        [platform, service_name, version, *SV] = urlObj.path.strip('/').split('/')
 
         func_name = func_name if func_name else ''.join([i.capitalize() for i in service_name.split('.')])
         if hasattr(self, func_name):
@@ -237,6 +244,25 @@ class {typeName}(TypedDict):
         params = {'jsv': '2.7.2', 'appKey': '12574478', 't': '1701088333698', 'sign': '630d4b8b2f0a555bb22462fb62b990be', 'api': 'mtop.alsc.wamai.store.detail.business.tab.phone', 'v': '1.0', 'type': 'originaljson', 'dataType': 'json', 'timeout': '10000', 'mainDomain': 'ele.me', 'subDomain': 'waimai-guide', 'H5Request': 'true', 'ttid': 'h5@chrome_pc_119.0.0.0', 'SV': '5.0', 'bx_et': 'dBlwr-v97CdZ1VE6eRV4ao-HpLVTs7KWmjZboq005lqiGPDFgDnznRTTsJ03urr0mR2G-64zyPq0jPmEomi-C1NMWE54A4YT1FF1irqIb-GXWsiFgDnzIsGqkszmomLTcFpIWVFYi3t7gQgtWkGeV36by_Z7MSxWVmE0B6Vx4jNrWGh4FNXFT-xoykcnKB6MDaqYYsfPyPyMlV6fZ_X0SREuRkWZyiUhvhlxQiX4IyUUVe8UdPQ83'}
         url = 'https://waimai-guide.ele.me/h5/mtop.alsc.wamai.store.detail.business.tab.phone/1.0/5.0/'
         payload = params.get('data', {'eleStoreId': 'E6480404258831972301'})
+        if data:
+            payload.update(data)
+
+        request_options = OrderedDict()
+        request_options.setdefault('method', method)
+        request_options.setdefault('url', url)
+        request_options.setdefault('params', params)
+        if method.upper() == 'POST':
+            request_options.setdefault('data', payload)
+
+        return self._execute(request_options)
+
+    def MtopAlscUserSessionEleCheck(self, data: Any = {}):
+        """mtop.alsc.user.session.ele.check函数"""
+
+        method = 'get'
+        params = {'jsv': '2.7.5', 'appKey': '12574478', 't': '1750813282236', 'sign': 'b11f35a93b31d469eaaf13223ff3f692', 'api': 'mtop.alsc.user.session.ele.check', 'v': '1.0', 'type': 'originaljson', 'dataType': 'json', 'timeout': '5000', 'mainDomain': 'ele.me', 'subDomain': 'waimai-guide', 'pageDomain': 'ele.me', 'H5Request': 'true', 'syncCookieMode': 'true'}
+        url = 'https://waimai-guide.ele.me/h5/mtop.alsc.user.session.ele.check/1.0/'
+        payload = params.get('data', {})
         if data:
             payload.update(data)
 

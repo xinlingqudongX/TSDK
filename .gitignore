@@ -10,7 +10,6 @@ __pycache__/
 .env
 
 # IDEs
-.vscode/
 *.pyc
 *.pyo
 *.pyd
