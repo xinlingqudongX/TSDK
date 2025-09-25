@@ -128,6 +128,10 @@ class TaobaoH5(Base):
         
         self.logger.error('从cookie获取的token为空')
         return ''
+    
+    @property
+    def deviceId(self):
+        return self.cookies.get('cna', domain='.taobao.com', default='')
 
     @property
     def hsiz(self):
@@ -219,7 +223,7 @@ class TaobaoH5(Base):
             self.logger.error('请求错误：{err}', err=err)
             return {}, res
     def _login_bofore(self):
-        res = self.get(f'https://login.taobao.com/member/login.jhtml?style=mini&newMini2=true&from=sm&full_redirect=false&redirectURL={quote(self.domain)}')
+        res = self.get(f'https://login.taobao.com/havanaone/login/login.htm?bizName=taobao&f=top&redirectURL={quote(self.domain)}')
         if res.status_code != 200:
             self.logger.error('初始化cooie失败，请检查原因:',res.text)
             return False
@@ -227,34 +231,25 @@ class TaobaoH5(Base):
         regex = re.findall(r'viewData = (\{.*\})',res.text)
         if len(regex) <= 0:
             self.logger.error('提取csrf失败')
-        viewData: taobao.LoginViewData = json.loads(regex[0])
+        viewData: taobao.LoginViewData2 = json.loads(regex[0])
         loginForm = viewData.get('loginFormData')
-        self._login_csrf = loginForm.get('_csrf_token')
+        self._login_csrf = loginForm.get('_csrf')
         self._login_umidtoken = loginForm.get('umidToken')
 
-    def qrLogin(self, timeout: int = 60) -> bool:
+    def qrLogin(self, timeout: int = 60, autoTrust: bool = False) -> bool:
         '''二维码登录'''
         umidToken = self.umidToken
         self._login_bofore()
 
-        res = self.get('https://login.taobao.com/newlogin/qrcode/generate.do', params={
-            'appName':'taobao',
-            'fromSite':'0',
-            'appName':'taobao',
-            'appEntrance':'taobao_pc',
-            '_csrf_token': self.loginCsrfToken,
+        res = self.get('https://login.taobao.com/havanaone/loginLegacy/qrCode/generate.do', params={
+            'bizEntrance':'taobao_pc',
+            'bizName':'taobao',
+            'hitRSA2048Gray':'true',
+            '_csrf': self.loginCsrfToken,
             'umidToken': self.umidToken,
-            'hsiz': self.hsiz,
-            'bizParams':'taobaoBizLoginFrom=taobao-home',
-            'full_redirect': False,
-            'mainPage': False,
-            'style': 'mini',
-            'appkey':'00000000',
-            'from':'sm',
-            'isMobile': False,
             'lang': 'zh_CN',
             'returnUrl': self.domain,
-            'umidTag': 'SERVER',
+            'umidTag': 'NOT_INIT',
             # 'bx-ua':'',
             # 'bx-umidtoken':'',
             # 'bx_et':'',
@@ -274,7 +269,7 @@ class TaobaoH5(Base):
         os.system('start qrcode.png')
 
         while timeout > 0:
-            checkData = self.qrNewCheck(t, ck)
+            checkData = self.qrNewCheck2(t, ck)
             qrCodeStatus = checkData.get('qrCodeStatus')
             if qrCodeStatus == taobao.QrStatus.已确认.value:
                 self.logger.debug(f'已确认:{checkData}')
@@ -299,6 +294,10 @@ class TaobaoH5(Base):
                 #     if not data.get('data'):
                 #         self.logger.error('需要安全验证登录:{rtext}', rtext=mainRes.text)
                 #         break
+                if autoTrust:
+                    # 自动信任
+                    self.trustDevice(ck, autoTrust)
+
                 return True
             elif qrCodeStatus == taobao.QrStatus.已过期.value:
                 self.logger.debug('二维码过期: {res}', res=checkData)
@@ -344,6 +343,36 @@ class TaobaoH5(Base):
             'defaultView':'qrcode',
             'deviceId': '',
             'pageTraceId':'',
+        })
+        resj = res.json()
+        hasError = resj.get('hasError')
+        if hasError:
+            self.logger.error('请求错误:{resj}', resj=resj)
+        self.logger.debug(f'检查返回:{resj}')
+        resData:taobao.QrCheckData = resj.get('content',{}).get('data')
+        return resData
+
+    def qrNewCheck2(self, t: int, ck: str):
+        res = self.post('https://login.taobao.com/havanaone/loginLegacy/qrCode/query.do?bizEntrance=taobao_pc&bizName=taobao', data={
+            't': t,
+            'ck': ck,
+            'ua':'',
+            'hitRSA2048Gray': True,
+            'bizEntrance': 'taobao_pc',
+            'bizName': 'taobao',
+            'renderRefer': 'https://www.taobao.com/',
+            '_csrf': self.loginCsrfToken,
+            'lang':'zh_CN',
+            'umidToken': self.umidToken,
+            'umidTag': 'NOT_INIT',
+            'navLanguage':'zh-CN',
+            'navUserAgent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'navPlatform':'Win32',
+            'isIframe':'false',
+            'banThirdPartyCookie':'true',
+            'documentReferer':'https://www.taobao.com/',
+            'defaultView':'password',
+            'deviceId': self.deviceId,
         })
         resj = res.json()
         hasError = resj.get('hasError')
@@ -403,6 +432,20 @@ class TaobaoH5(Base):
             self.get(redirectUrl)
         self.getUserSimple()
         
+        return resj
+
+    def trustDevice(self, ck: str, trust: bool):
+        '''信任设备'''
+        res = self.post('https://login.taobao.com/havanaone/login/autoLogin/choose.do',params={
+            'token': ck.replace('qr_code_',''),
+            'chooseNextAction': 'clearAutoLoginToken',
+            'chooseButton': trust,
+        }, json={
+            'dialogStress': trust,
+            'deviceId': self.deviceId,
+        })
+
+        resj: Any = res.json()
         return resj
 
     def __hookX5(self, res: Response, jumpUrl: str = ''):

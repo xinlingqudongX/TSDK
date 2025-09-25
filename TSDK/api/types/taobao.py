@@ -165,6 +165,23 @@ class LoginFormData(TypedDict):
     returnUrl: str
     fromSite: int
 
+class LoginFormData2(TypedDict):
+    appName: str
+    appEntrance: str
+    _csrf: str
+    umidToken: str
+    hsiz: str
+    newMini2: str
+    bizParams: str
+    full_redirect: str
+    mainPage: bool
+    style: str
+    appkey: str
+    isMobile: bool
+    lang: str
+    returnUrl: str
+    fromSite: int
+
 class LoginViewData(TypedDict):
     appEntrance: str
     appName: str
